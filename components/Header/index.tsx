@@ -1,6 +1,4 @@
 'use client';
-
-import { useState } from 'react';
 import { Navbar } from '@/components/Header/navbar'
 import { NavItem } from './navbar';
 
@@ -23,8 +21,6 @@ interface HeaderProps {
 export default function Header({
 	onProfileClick,
 }: HeaderProps) {
-	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
 
 	const handleProfileClick = () => {
 		console.log('Profile clicked');
@@ -35,7 +31,6 @@ export default function Header({
 		<Navbar
 			items={MENU_ITEMS}
 			onProfileClick={handleProfileClick}
-			onMenuToggle={(isOpen: boolean) => setMobileMenuOpen(isOpen)}
 		/>
 	);
 }

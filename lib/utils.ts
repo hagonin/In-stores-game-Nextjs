@@ -5,28 +5,6 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
-// function to get size configuration
-export const getHeightClasses = (size: 'small' | 'large' | 'normal') => {
-	switch (size) {
-		case 'small':
-			return {
-				aspectRatio: 'aspect-[305/225]',
-				maxWidth: 'max-w-[305px]',
-			};
-		case 'large':
-			return {
-				aspectRatio: 'aspect-[631/349]',
-				maxWidth: 'max-w-[631px]',
-			};
-		case 'normal':
-		default:
-			return {
-				aspectRatio: 'aspect-[410/281]',
-				maxWidth: 'max-w-[410px]',
-			};
-	}
-};
-
 export const scrollToTop = () => {
 	window.scrollTo({
 		top: 0,
@@ -52,10 +30,32 @@ export const getGridRows = (isMobile: boolean, isTablet: boolean): number[] => {
 export const getCardHeightClass = (size: 'normal' | 'large' | 'small') => {
 	switch (size) {
 		case 'small':
-			return 'h-[200px] sm:h-[225px] md:h-[250px]';
+			return 'h-[200px] sm:h-[225px] md:h-[281px]';
 		case 'large':
-			return 'h-[300px] sm:h-[325px] md:h-[350px]';
+			return 'h-[300px] sm:h-[325px] md:h-[349px]';
 		default:
-			return 'h-[250px] sm:h-[275px] md:h-[300px]';
+			return 'h-[250px] sm:h-[275px] md:h-[231px]';
 	}
 };
+
+// function to get size configuration
+// export const getCardHeightClass = (size: 'small' | 'large' | 'normal') => {
+// 	switch (size) {
+// 		case 'small':
+// 			return {
+// 				aspectRatio: 'aspect-[305/225]',
+// 				maxWidth: 'max-w-[305px]',
+// 			};
+// 		case 'large':
+// 			return {
+// 				aspectRatio: 'aspect-[631/349]',
+// 				maxWidth: 'max-w-[631px]',
+// 			};
+// 		case 'normal':
+// 		default:
+// 			return {
+// 				aspectRatio: 'aspect-[410/281]',
+// 				maxWidth: 'max-w-[410px]',
+// 			};
+// 	}
+// };

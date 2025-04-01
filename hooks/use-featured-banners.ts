@@ -69,8 +69,8 @@ export function useFeaturedBanners() {
 		return {
 			id: String(game.id),
 			title: game.name,
-			subtitle: game.description_raw
-				? game.description_raw.slice(0, 100) + '...'
+			subtitle: game.description
+				? game.description.slice(0, 100) + '...'
 				: `Released: ${game.released || 'Unknown date'}`,
 			image: desktopImage,
 			mobileImage: mobileImage,
