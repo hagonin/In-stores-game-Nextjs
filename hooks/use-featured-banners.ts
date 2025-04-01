@@ -66,12 +66,24 @@ export function useFeaturedBanners() {
 				? game.short_screenshots[1].image
 				: game.background_image;
 
+		// Create a rich subtitle from the description or release date
+		let subtitle = '';
+		if (game.description) {
+			// Truncate description to around 120 characters
+			subtitle =
+				game.description.length > 120
+					? game.description.slice(0, 120) + '...'
+					: game.description;
+		} else if (game.released) {
+			subtitle = `Released: ${game.released}`;
+		} else {
+			subtitle = 'Explore this exciting game adventure';
+		}
+
 		return {
 			id: String(game.id),
 			title: game.name,
-			subtitle: game.description
-				? game.description.slice(0, 100) + '...'
-				: `Released: ${game.released || 'Unknown date'}`,
+			subtitle,
 			image: desktopImage,
 			mobileImage: mobileImage,
 			genres: formatGenres(game),

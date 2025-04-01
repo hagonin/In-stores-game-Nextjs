@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { AlertCircle } from 'lucide-react';
@@ -13,7 +13,7 @@ import { useBannerNavigation } from '@/hooks/use-banner-navigation';
 // Components
 import BannerContent from './banner-content';
 import BannerNavigation from './banner-navigation';
-import BannerImage  from './banner-image';
+import BannerImage from './banner-image';
 import BannerLoading from './banner-loading';
 
 export default function FeaturedBanner() {
@@ -26,13 +26,37 @@ export default function FeaturedBanner() {
 		handleImageLoad,
 		handleImageError,
 	} = useImageLoading();
-	const { currentBanner, nextBanner, prevBanner, goToBanner } =
-		useBannerNavigation(banners);
+	const {
+		currentBanner,
+		nextBanner,
+		prevBanner,
+		goToBanner,
+		pauseAutoSlide,
+		resumeAutoSlide,
+	} = useBannerNavigation(banners);
 
+	// Client-side detection for device type
+	const isDesktopQuery = useMediaQuery('(min-width: 1025px)');
+	const isTabletQuery = useMediaQuery(
+		'(min-width: 641px) and (max-width: 1024px)'
+	);
+	const isMobileQuery = useMediaQuery('(max-width: 640px)');
+
+	// Default to mobile-first approach
+	const [isDesktop, setIsDesktop] = useState(false);
+	const [isTablet, setIsTablet] = useState(false);
+	const [isMobile, setIsMobile] = useState(true);
+
+	// Update states after hydration
+	useEffect(() => {
+		setIsDesktop(isDesktopQuery);
+		setIsTablet(isTabletQuery);
+		setIsMobile(isMobileQuery);
+	}, [isDesktopQuery, isTabletQuery, isMobileQuery]);
+
+	// Add state for hover effect - only for desktop
+	const [isHovered, setIsHovered] = useState(false);
 	const bannerRef = useRef<HTMLDivElement>(null);
-
-	const isMobile = useMediaQuery('(max-width: 640px)');
-	const isTablet = useMediaQuery('(min-width: 641px) and (max-width: 1024px)');
 
 	// Define banner height class based on screen size
 	const getBannerHeight = () => {
@@ -67,6 +91,21 @@ export default function FeaturedBanner() {
 		}
 	};
 
+	// Handle hover events (desktop only)
+	const handleMouseEnter = () => {
+		if (isDesktop) {
+			setIsHovered(true);
+			pauseAutoSlide(); // Pause auto-slide while hovering
+		}
+	};
+
+	const handleMouseLeave = () => {
+		if (isDesktop) {
+			setIsHovered(false);
+			resumeAutoSlide(); // Resume auto-slide when not hovering
+		}
+	};
+
 	const bannerHeightClass = getBannerHeight();
 
 	if (isLoading) {
@@ -98,6 +137,8 @@ export default function FeaturedBanner() {
 			<div
 				ref={bannerRef}
 				className={`w-full mx-auto relative overflow-hidden ${bannerHeightClass}`}
+				onMouseEnter={handleMouseEnter}
+				onMouseLeave={handleMouseLeave}
 			>
 				<div
 					className="absolute inset-0 cursor-pointer"
@@ -115,12 +156,16 @@ export default function FeaturedBanner() {
 						onClick={handleClickBanner}
 					/>
 
-					<div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/70 via-black/30 to-transparent">
-						<BannerContent
-							title={banners[currentBanner].title}
-							genres={banners[currentBanner].genres}
-							isImageLoaded={isImageLoaded}
-						/>
+					<div className="absolute inset-0 flex flex-col justify-end">
+						<div className="banner-content">
+							<BannerContent
+								title={banners[currentBanner].title}
+								subtitle={banners[currentBanner].subtitle}
+								genres={banners[currentBanner].genres}
+								isImageLoaded={isImageLoaded}
+								isHovered={isHovered}
+							/>
+						</div>
 					</div>
 				</div>
 
