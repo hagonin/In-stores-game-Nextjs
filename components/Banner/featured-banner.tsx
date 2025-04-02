@@ -1,14 +1,14 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { AlertCircle } from 'lucide-react';
+import { motion, MotionConfig, PanInfo } from 'framer-motion';
 
 // Custom hooks
 import { useFeaturedBanners } from '@/hooks/use-featured-banners';
 import { useImageLoading } from '@/hooks/use-image-loading';
-import { useBannerNavigation } from '@/hooks/use-banner-navigation';
 
 // Components
 import BannerContent from './banner-content';
@@ -26,8 +26,32 @@ export default function FeaturedBanner() {
 		handleImageLoad,
 		handleImageError,
 	} = useImageLoading();
-	const { currentBanner, nextBanner, prevBanner, goToBanner } =
-		useBannerNavigation(banners);
+
+	// Custom state management for infinite carousel
+	const [currentIndex, setCurrentIndex] = useState(0);
+
+	// Generate an array with duplicate slides for the infinite effect
+	const getCircularBanners = useCallback(() => {
+		if (!banners || banners.length <= 1) return banners;
+
+		// Create copies to enable infinite scrolling illusion
+		return [...banners, ...banners, ...banners];
+	}, [banners]);
+
+	const circularBanners = getCircularBanners();
+	const totalBanners = banners?.length || 0;
+
+	// Calculate the starting index for the center set of banners
+	const startingIndex = totalBanners;
+
+	// Use this to track if we're currently performing a layout transition
+	const [isLayoutAnimating, setIsLayoutAnimating] = useState(false);
+
+	// Calculate the real index (for UI display)
+	const realIndex = totalBanners
+		? (((currentIndex - startingIndex) % totalBanners) + totalBanners) %
+		  totalBanners
+		: 0;
 
 	// Client-side detection for device type
 	const isDesktopQuery = useMediaQuery('(min-width: 1025px)');
@@ -48,9 +72,41 @@ export default function FeaturedBanner() {
 		setIsMobile(isMobileQuery);
 	}, [isDesktopQuery, isTabletQuery, isMobileQuery]);
 
+	// After banners load, set the current index to the middle set
+	useEffect(() => {
+		if (banners && banners.length > 0) {
+			setCurrentIndex(startingIndex);
+		}
+	}, [banners, startingIndex]);
+
+	// Initialize the index if it changes drastically
+	useEffect(() => {
+		// If we've scrolled too far in either direction, reset to middle seamlessly
+		if (currentIndex < totalBanners / 2) {
+			setIsLayoutAnimating(true);
+			setTimeout(() => {
+				setCurrentIndex(startingIndex + (currentIndex % totalBanners));
+				setIsLayoutAnimating(false);
+			}, 50);
+		} else if (
+			currentIndex >=
+			startingIndex + totalBanners + totalBanners / 2
+		) {
+			setIsLayoutAnimating(true);
+			setTimeout(() => {
+				setCurrentIndex(startingIndex + (currentIndex % totalBanners));
+				setIsLayoutAnimating(false);
+			}, 50);
+		}
+	}, [currentIndex, startingIndex, totalBanners]);
+
 	// Add state for hover effect - only for desktop
 	const [isHovered, setIsHovered] = useState(false);
+	const [isDragging, setIsDragging] = useState(false);
+
+	// Refs for the carousel
 	const bannerRef = useRef<HTMLDivElement>(null);
+	const constraintsRef = useRef<HTMLDivElement>(null);
 
 	// Define banner height class based on screen size
 	const getBannerHeight = () => {
@@ -61,25 +117,30 @@ export default function FeaturedBanner() {
 
 	const handleNavigate = (direction: 'next' | 'prev') => {
 		resetImageState();
+
 		if (direction === 'next') {
-			nextBanner();
+			setCurrentIndex((prevIndex) => prevIndex + 1);
 		} else {
-			prevBanner();
+			setCurrentIndex((prevIndex) => prevIndex - 1);
 		}
 	};
 
 	const handleGoToBanner = (index: number) => {
 		resetImageState();
-		goToBanner(index);
+		// Convert dot index to the circular index
+		setCurrentIndex(startingIndex + index);
 	};
 
 	const handleClickBanner = () => {
-		const gameId = banners[currentBanner]?.id;
-		if (gameId) {
+		// Don't navigate if dragging
+		if (isDragging) return;
+
+		const banner = banners[realIndex];
+		if (banner?.id) {
 			try {
-				router.push(`/games/${gameId}`);
+				router.push(`/games/${banner.id}`);
 			} catch (error) {
-				console.error(`Failed to navigate to game: ${gameId}`, error);
+				console.error(`Failed to navigate to game: ${banner.id}`, error);
 				router.push('/404');
 			}
 		}
@@ -92,10 +153,34 @@ export default function FeaturedBanner() {
 		}
 	};
 
-	// const handleMouseLeave = () => {
-	// 	if (isDesktop) {
-	// 		setIsHovered(false);
-	// 	}
+	const handleMouseLeave = () => {
+		if (isDesktop) {
+			setIsHovered(false);
+		}
+	};
+
+	// Handle drag events
+	const handleDragStart = () => {
+		setIsDragging(true);
+	};
+
+	const handleDragEnd = (
+		event: MouseEvent | TouchEvent | PointerEvent,
+		info: PanInfo
+	) => {
+		setIsDragging(false);
+
+		const draggedDistance = info.offset.x;
+		const swipeThreshold = 50;
+
+		if (draggedDistance > swipeThreshold) {
+			// Swiped right - go to previous
+			setCurrentIndex((prevIndex) => prevIndex - 1);
+		} else if (draggedDistance < -swipeThreshold) {
+			// Swiped left - go to next
+			setCurrentIndex((prevIndex) => prevIndex + 1);
+		}
+	};
 
 	const bannerHeightClass = getBannerHeight();
 
@@ -108,7 +193,7 @@ export default function FeaturedBanner() {
 		);
 	}
 
-	if (banners.length === 0) {
+	if (!banners || banners.length === 0) {
 		return (
 			<div className="relative bg-transparent">
 				<div
@@ -124,48 +209,90 @@ export default function FeaturedBanner() {
 	}
 
 	return (
-		<div className="relative bg-transparent">
-			<div
-				ref={bannerRef}
-				className={`w-full mx-auto relative overflow-hidden ${bannerHeightClass}`}
-				onMouseEnter={handleMouseEnter}
-			>
+		<MotionConfig transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}>
+			<div className="relative bg-transparent">
 				<div
-					className="absolute inset-0 cursor-pointer"
-					onClick={handleClickBanner}
+					ref={bannerRef}
+					className={`w-full mx-auto relative overflow-hidden ${bannerHeightClass}`}
+					onMouseEnter={handleMouseEnter}
+					onMouseLeave={handleMouseLeave}
 				>
-					<BannerImage
-						src={banners[currentBanner].image}
-						mobileSrc={banners[currentBanner].mobileImage}
-						alt={banners[currentBanner].title}
-						isFirstBanner={currentBanner === 0}
-						isImageLoaded={isImageLoaded}
-						isImageError={isImageError}
-						onLoad={handleImageLoad}
-						onError={handleImageError}
-						onClick={handleClickBanner}
-					/>
+					{/* Parent container with ref for drag constraints */}
+					<div
+						ref={constraintsRef}
+						className="relative w-full h-full overflow-hidden touch-pan-y"
+					>
+						{/* Draggable container */}
+						<motion.div
+							style={{
+								width: `${circularBanners.length * 100}%`, // Width based on total number of slides
+								height: '100%',
+							}}
+							animate={{
+								x: `-${currentIndex * (100 / circularBanners.length)}%`, // Position based on current index
+							}}
+							transition={{
+								duration: isLayoutAnimating ? 0 : 0.5,
+								ease: [0.32, 0.72, 0, 1],
+							}}
+							drag="x"
+							dragElastic={0.1}
+							dragConstraints={constraintsRef}
+							onDragStart={handleDragStart}
+							onDragEnd={handleDragEnd}
+							className="flex h-full cursor-grab active:cursor-grabbing"
+						>
+							{/* Map through banners including duplicates for infinite effect */}
+							{circularBanners.map((banner, index) => (
+								<div
+									key={`${banner.id}-${index}`}
+									className="relative h-full"
+									style={{ width: `${100 / circularBanners.length}%` }}
+									onClick={handleClickBanner}
+								>
+									<BannerImage
+										src={banner.image}
+										mobileSrc={banner.mobileImage}
+										alt={banner.title}
+										isFirstBanner={index === startingIndex} // First banner in the middle set
+										isImageLoaded={true} // Always render for smooth dragging
+										isImageError={isImageError && index === currentIndex}
+										onLoad={index === currentIndex ? handleImageLoad : () => {}}
+										onError={
+											index === currentIndex ? handleImageError : () => {}
+										}
+										onClick={handleClickBanner}
+									/>
 
-					<div className="absolute inset-0 flex flex-col justify-end">
-						<div className="banner-content">
-							<BannerContent
-								title={banners[currentBanner].title}
-								genres={banners[currentBanner].genres}
-								isImageLoaded={isImageLoaded}
-								isHovered={isHovered}
-							/>
-						</div>
+									<div className="absolute inset-0 flex flex-col justify-end">
+										<div className="banner-content">
+											{index === currentIndex && (
+												<BannerContent
+													title={banner.title}
+													genres={banner.genres}
+													isImageLoaded={
+														isImageLoaded || index !== currentIndex
+													}
+													isHovered={isHovered || !isDesktop}
+												/>
+											)}
+										</div>
+									</div>
+								</div>
+							))}
+						</motion.div>
 					</div>
-				</div>
 
-				<BannerNavigation
-					totalBanners={banners.length}
-					currentBanner={currentBanner}
-					onNext={() => handleNavigate('next')}
-					onPrev={() => handleNavigate('prev')}
-					onGoTo={handleGoToBanner}
-				/>
+					{/* Navigation buttons and dots - use real index for navigation display */}
+					<BannerNavigation
+						totalBanners={totalBanners}
+						currentBanner={realIndex}
+						onNext={() => handleNavigate('next')}
+						onPrev={() => handleNavigate('prev')}
+						onGoTo={handleGoToBanner}
+					/>
+				</div>
 			</div>
-		</div>
+		</MotionConfig>
 	);
 }

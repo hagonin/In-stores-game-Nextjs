@@ -1,5 +1,6 @@
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
 interface BannerNavigationProps {
 	totalBanners: number;
 	currentBanner: number;
@@ -21,9 +22,8 @@ export default function BannerNavigation({
 	return (
 		<div className="absolute inset-0 z-10 pointer-events-none">
 			{/* Centered Dots - Only visible on desktop  */}
-
 			{isDesktop && (
-				<div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 pointer-events-auto">
+				<div className="absolute bottom-6 right-3 transform -translate-x-1/2 pointer-events-auto">
 					<div className="flex items-center gap-2">
 						{Array.from({ length: totalBanners }).map((_, index) => (
 							<button
@@ -41,27 +41,56 @@ export default function BannerNavigation({
 				</div>
 			)}
 
-			<div
-				className={`absolute pointer-events-auto bottom-6 right-0 transform -translate-x-1/2'
-				}`}
-			>
-				<div className="flex items-center gap-2">
-					<button
-						className="p-2 bg-black/30 backdrop-blur-sm rounded-full grow-0 shrink-0 text-white hover:bg-black/50 transition-colors"
-						onClick={onPrev}
-						aria-label="Previous banner"
+			{/* Navigation buttons with animation */}
+			<AnimatePresence initial={false}>
+				<motion.button
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 0.7 }}
+					exit={{ opacity: 0 }}
+					whileHover={{ opacity: 1 }}
+					className="absolute left-2 top-1/2 -mt-6 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-black/30 text-white shadow-lg hover:bg-black/50 focus:outline-none pointer-events-auto"
+					onClick={onPrev}
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						className="h-6 w-6"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
 					>
-						<ChevronLeft size={16} />
-					</button>
-					<button
-						className="p-2 bg-black/30 backdrop-blur-sm rounded-full text-white hover:bg-black/50 transition-colors"
-						onClick={onNext}
-						aria-label="Next banner"
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							strokeWidth={2}
+							d="M15 19l-7-7 7-7"
+						/>
+					</svg>
+				</motion.button>
+
+				<motion.button
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 0.7 }}
+					exit={{ opacity: 0 }}
+					whileHover={{ opacity: 1 }}
+					className="absolute right-2 top-1/2 -mt-6 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-black/30 text-white shadow-lg hover:bg-black/50 focus:outline-none pointer-events-auto"
+					onClick={onNext}
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						className="h-6 w-6"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
 					>
-						<ChevronRight size={16} />
-					</button>
-				</div>
-			</div>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							strokeWidth={2}
+							d="M9 5l7 7-7 7"
+						/>
+					</svg>
+				</motion.button>
+			</AnimatePresence>
 		</div>
 	);
 }

@@ -82,14 +82,14 @@ export default function BannerContent({
 
 			{/* Mobile/Tablet version - always visible with no animation */}
 			<div className={!isDesktop ? 'block' : 'hidden'}>
-				<div className="flex flex-col">
+				<div className="flex flex-col max-w-[85%] sm:max-w-[75%] md:max-w-[65%]">
 					{genres && (
 						<div className="inline-block bg-blue-500/90 backdrop-blur-sm py-1 px-3 rounded-2xl text-white text-xs font-medium tracking-wide mb-2 self-start">
 							{genres}
 						</div>
 					)}
 
-					<h2 className="text-lg sm:text-xl font-bold mb-2 text-white cursor-pointer">
+					<h2 className="text-lg sm:text-xl font-bold mb-2 text-white cursor-pointer line-clamp-2">
 						{title}
 					</h2>
 				</div>
