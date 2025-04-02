@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 
 interface BannerContentProps {
 	title: string;
-	subtitle?: string;
 	isImageLoaded: boolean;
 	genres?: string;
 	isHovered?: boolean;

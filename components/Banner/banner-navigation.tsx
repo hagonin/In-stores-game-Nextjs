@@ -1,6 +1,5 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/use-media-query';
-
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 interface BannerNavigationProps {
 	totalBanners: number;
 	currentBanner: number;
@@ -21,7 +20,8 @@ export default function BannerNavigation({
 
 	return (
 		<div className="absolute inset-0 z-10 pointer-events-none">
-			{/* Centered Dots - Only visible on desktop */}
+			{/* Centered Dots - Only visible on desktop  */}
+
 			{isDesktop && (
 				<div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 pointer-events-auto">
 					<div className="flex items-center gap-2">
@@ -41,12 +41,8 @@ export default function BannerNavigation({
 				</div>
 			)}
 
-			{/* Chevron Buttons - Centered on mobile/tablet, right-aligned on desktop */}
 			<div
-				className={`absolute pointer-events-auto ${
-					isDesktop
-						? 'bottom-6 right-6'
-						: 'bottom-6 left-1/2 transform -translate-x-1/2'
+				className={`absolute pointer-events-auto bottom-6 right-0 transform -translate-x-1/2'
 				}`}
 			>
 				<div className="flex items-center gap-2">
@@ -55,14 +51,14 @@ export default function BannerNavigation({
 						onClick={onPrev}
 						aria-label="Previous banner"
 					>
-						<ChevronLeft size={isDesktop ? 16 : 18} />
+						<ChevronLeft size={16} />
 					</button>
 					<button
 						className="p-2 bg-black/30 backdrop-blur-sm rounded-full text-white hover:bg-black/50 transition-colors"
 						onClick={onNext}
 						aria-label="Next banner"
 					>
-						<ChevronRight size={isDesktop ? 16 : 18} />
+						<ChevronRight size={16} />
 					</button>
 				</div>
 			</div>
