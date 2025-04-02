@@ -1,21 +1,31 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMediaQuery } from '@/hooks/use-media-query';
 
-export const useHover = (onlyDesktop = true) => {
+export const useHover = () => {
 	const [isHovered, setIsHovered] = useState(false);
 	const isDesktop = useMediaQuery('(min-width: 1024px)');
+	const isMobileOrTablet = useMediaQuery('(max-width: 1023px)');
 
-	const handleMouseEnter = useCallback(() => {
-		if (!onlyDesktop || (onlyDesktop && isDesktop)) {
+	// Force hover state to be true on mobile/tablet to ensure content visibility
+	useEffect(() => {
+		if (isMobileOrTablet) {
 			setIsHovered(true);
 		}
-	}, [onlyDesktop, isDesktop]);
+	}, [isMobileOrTablet]);
+
+	const handleMouseEnter = useCallback(() => {
+		// Only allow hover effect on desktop
+		if (isDesktop) {
+			setIsHovered(true);
+		}
+	}, [isDesktop]);
 
 	const handleMouseLeave = useCallback(() => {
-		if (!onlyDesktop || (onlyDesktop && isDesktop)) {
+		// Only reset hover state on desktop
+		if (isDesktop) {
 			setIsHovered(false);
 		}
-	}, [onlyDesktop, isDesktop]);
+	}, [isDesktop]);
 
 	return {
 		isHovered,

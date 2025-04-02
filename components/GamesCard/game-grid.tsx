@@ -52,19 +52,13 @@ export default function GameGrid({
 			{rows.map((row, rowIndex) => {
 				// Determine row types based on pattern position
 				const patternPosition = rowIndex % 3;
-				const isLargeRow =
-					!isMobile &&
-					!isTablet &&
-					(patternPosition === 2 );
-				const isSmallRow =
-					!isMobile &&
-					!isTablet &&
-					(patternPosition === 3 );
+				const isLargeRow = !isMobile && !isTablet && patternPosition === 2;
+				const isSmallRow = !isMobile && !isTablet && patternPosition === 3;
 
 				return (
 					<div
 						key={rowIndex}
-						className={`grid grid-cols-1 gap-5 ${
+						className={`grid grid-cols-1 gap-5 sm:gap-4 md:gap-6 ${
 							isMobile
 								? ''
 								: isTablet
