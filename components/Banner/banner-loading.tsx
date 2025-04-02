@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components/UI/skeleton'
+import { Skeleton } from '@/components/UI/skeleton';
 import { LoadingIndicator } from '@/components/UI/loading-indicator';
 
 interface BannerLoadingProps {
