@@ -35,7 +35,6 @@ export function useGames() {
 	fetchInitialGames = useCallback(async () => {
 		// Prevent duplicate requests
 		if (loading) {
-			console.log('useGames: Already loading, skipping fetchInitialGames');
 			return;
 		}
 
@@ -45,7 +44,6 @@ export function useGames() {
 		setError(null);
 
 		try {
-			console.log('useGames: Fetching initial games');
 			const games = await gameService.getGames();
 
 			if (!games || games.length === 0) {
@@ -54,7 +52,6 @@ export function useGames() {
 				return;
 			}
 
-			console.log(`useGames: Fetched ${games.length} initial games`);
 			setAllGames(games);
 			setVisibleItems(
 				games.reduce(
@@ -69,7 +66,6 @@ export function useGames() {
 			// Reset page to 1 since we've loaded the first page
 			setPage(1);
 		} catch (err) {
-			console.error('useGames: Failed to load initial games:', err);
 			setError('Failed to load games. Please try again later.');
 		} finally {
 			setLoading(false);
@@ -81,11 +77,6 @@ export function useGames() {
 	// Function to load more games - memoized to prevent unnecessary re-renders
 	const loadMoreGames = useCallback(async () => {
 		if (loading || isEndOfContent) {
-			console.log(
-				`useGames: Skipping loadMoreGames - ${
-					loading ? 'already loading' : 'end of content reached'
-				}`
-			);
 			return;
 		}
 
@@ -103,31 +94,18 @@ export function useGames() {
 				const nextPage = currentPage + 1;
 				attemptCount++;
 
-				console.log(
-					`useGames: Loading games for page ${nextPage} (attempt ${attemptCount}/${MAX_ATTEMPTS})`
-				);
-
 				const newGames = await gameService.getGamesByPage(nextPage);
 
 				// If we got no games, we've reached the end
 				if (!newGames || newGames.length === 0) {
-					console.log('useGames: No more games available');
 					setIsEndOfContent(true);
 					break;
 				}
-
-				console.log(
-					`useGames: Received ${newGames.length} games for page ${nextPage}`
-				);
 
 				// Filter out any duplicates (by ID)
 				uniqueNewGames = newGames.filter(
 					(newGame) =>
 						!allGames.some((existingGame) => existingGame.id === newGame.id)
-				);
-
-				console.log(
-					`useGames: ${uniqueNewGames.length} unique games after filtering`
 				);
 
 				// If we have unique games, we're done
@@ -137,7 +115,6 @@ export function useGames() {
 				}
 
 				// If all games were duplicates, try the next page
-				console.log(`useGames: All games were duplicates, trying next page`);
 				currentPage = nextPage;
 			}
 
@@ -155,13 +132,9 @@ export function useGames() {
 					return newVisibility;
 				});
 			} else if (attemptCount >= MAX_ATTEMPTS) {
-				console.log(
-					'useGames: Reached maximum attempts, end of content reached'
-				);
 				setIsEndOfContent(true);
 			}
 		} catch (err) {
-			console.error('useGames: Error loading more games:', err);
 			setError('Failed to load more games. Please try again later.');
 		} finally {
 			setLoading(false);
@@ -171,7 +144,6 @@ export function useGames() {
 	// Initialize visibility state for initial games
 	useEffect(() => {
 		if (allGames.length > 0 && Object.keys(visibleItems).length === 0) {
-			console.log('useGames: Initializing visibility state for games');
 			const initialVisibility: Record<string, boolean> = {};
 
 			allGames.forEach((game, index) => {
@@ -201,7 +173,6 @@ export function useGames() {
 					await fetchInitialGames();
 				}
 			} catch (error) {
-				console.error('useGames: Failed to load initial games:', error);
 				if (isMounted) {
 					setError('Failed to load games. Please try again later.');
 					setInitialLoading(false);

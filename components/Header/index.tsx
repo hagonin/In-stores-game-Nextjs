@@ -1,5 +1,5 @@
 'use client';
-import { Navbar } from '@/components/Header/navbar'
+import { Navbar } from '@/components/Header/navbar';
 import { NavItem } from './navbar';
 
 // Define menu items as a constant array
@@ -18,19 +18,10 @@ interface HeaderProps {
 	onProfileClick?: () => void;
 }
 
-export default function Header({
-	onProfileClick,
-}: HeaderProps) {
-
+export default function Header({ onProfileClick }: HeaderProps) {
 	const handleProfileClick = () => {
-		console.log('Profile clicked');
 		onProfileClick?.();
 	};
 
-	return (
-		<Navbar
-			items={MENU_ITEMS}
-			onProfileClick={handleProfileClick}
-		/>
-	);
+	return <Navbar items={MENU_ITEMS} onProfileClick={handleProfileClick} />;
 }

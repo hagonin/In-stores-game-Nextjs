@@ -36,7 +36,7 @@ export function useFeaturedBanners() {
 					setBanners(formattedBanners);
 				}
 			} catch (error) {
-				console.error('Error loading banners:', error);
+				// Silently handle error
 			} finally {
 				// Only show loading UI if it took more than 1 second
 				const loadTime = Date.now() - loadStartTime;

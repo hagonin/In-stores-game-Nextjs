@@ -56,30 +56,36 @@ export default async function handler(
 			// Handle default games request with pagination
 			const pageNumber = parseInt(page as string, 10);
 
-			console.log(`API: Fetching games for page ${pageNumber}`);
+			// Fetch games from the RAWG API
+			const fetchGames = async (pageNumber = 1, pageSize = 12) => {
+				try {
+					const baseUrl = 'https://api.rawg.io/api/games';
+					const apiKey = process.env.NEXT_PUBLIC_RAWG_API_KEY;
 
-			const response = await axios.get<ApiResponse<Game>>(`${API_URL}/games`, {
-				params: {
-					key: API_KEY,
-					page: pageNumber,
-					page_size: 18,
-					ordering: '-rating',
-					exclude_additions: true,
-					dates: '2015-01-01,2024-12-31',
-					metacritic: '70,100',
-				},
-			});
+					const response = await axios.get(baseUrl, {
+						params: {
+							key: apiKey,
+							page: pageNumber,
+							page_size: pageSize,
+							ordering: '-rating', // Sort by rating descending
+							metacritic: '70,100', // Only games with decent ratings
+						},
+					});
 
-			if (!response.data || !response.data.results) {
+					return response.data;
+				} catch (error) {
+					throw new Error(`Failed to fetch games: ${error}`);
+				}
+			};
+
+			const response = await fetchGames(pageNumber);
+
+			if (!response || !response.results) {
 				return res.status(404).json({ error: 'No games found' });
 			}
 
-			console.log(
-				`API: Fetched ${response.data.results.length} games for page ${pageNumber}`
-			);
-
 			return res.status(200).json({
-				...response.data,
+				...response,
 				page: pageNumber,
 			});
 		}

@@ -12,26 +12,17 @@ const api = axios.create({
 
 export const gameService = {
 	async getGames() {
-		console.log('gameService: Fetching initial games (page 1)');
 		const response = await api.get<ApiResponse<Game>>('/games');
-		console.log(
-			`gameService: Received ${response.data.results.length} initial games`
-		);
 		return response.data.results;
 	},
 
 	async getGamesByPage(page: number) {
-		console.log(`gameService: Fetching games for page ${page}`);
 		try {
 			const response = await api.get<ApiResponse<Game>>('/games', {
 				params: { page },
 			});
-			console.log(
-				`gameService: Received ${response.data.results.length} games for page ${page}`
-			);
 			return response.data.results;
 		} catch (error) {
-			console.error(`gameService: Error fetching page ${page}:`, error);
 			throw error;
 		}
 	},

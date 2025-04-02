@@ -28,11 +28,9 @@ export function GamesCard({ onScrollToTop }: GameSectionProps) {
 		resetGames,
 	} = useGames();
 
-	// Log component data for debugging
+	// Remove debug logging
 	useEffect(() => {
-		console.log(
-			`GameSection: Render - page=${page}, games=${allGames.length}, loading=${loading}, isEndOfContent=${isEndOfContent}`
-		);
+		// Effect for any future non-logging related code
 	}, [page, allGames.length, loading, isEndOfContent]);
 
 	return (

@@ -168,8 +168,8 @@ export default function Banner() {
 		if (gameId) {
 			try {
 				router.push(`/games/${gameId}`);
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			} catch (error) {
-				console.error(`Failed to navigate to game: ${gameId}`, error);
 				router.push('/404');
 			}
 		}

@@ -18,12 +18,7 @@ export function ScrollInfinite({
 	// Memoize the loadMore function to prevent unnecessary re-renders
 	const loadMore = useCallback(() => {
 		if (!loading && hasMore) {
-			console.log('ScrollInfinite: Triggered load more');
 			onLoadMore();
-		} else {
-			console.log(
-				`ScrollInfinite: Load more skipped (loading=${loading}, hasMore=${hasMore})`
-			);
 		}
 	}, [loading, hasMore, onLoadMore]);
 
@@ -32,7 +27,6 @@ export function ScrollInfinite({
 		const currentRef = loaderRef.current;
 
 		if (!currentRef) {
-			console.log('ScrollInfinite: No loader reference found');
 			return;
 		}
 
@@ -42,13 +36,8 @@ export function ScrollInfinite({
 				const [entry] = entries;
 
 				if (entry.isIntersecting) {
-					console.log('ScrollInfinite: Element is intersecting viewport');
 					if (hasMore && !loading) {
 						loadMore();
-					} else {
-						console.log(
-							`ScrollInfinite: Intersection detected but not loading more (hasMore=${hasMore}, loading=${loading})`
-						);
 					}
 				}
 			},
@@ -61,12 +50,10 @@ export function ScrollInfinite({
 
 		// Start observing our loader element
 		observer.observe(currentRef);
-		console.log('ScrollInfinite: Observer started on loader element');
 
 		// Clean up observer on unmount
 		return () => {
 			if (currentRef) {
-				console.log('ScrollInfinite: Cleaning up observer');
 				observer.unobserve(currentRef);
 			}
 		};

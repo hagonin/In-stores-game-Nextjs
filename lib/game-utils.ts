@@ -6,7 +6,6 @@ export async function fetchGames(): Promise<Game[]> {
 	try {
 		return await gameService.getGames();
 	} catch (error) {
-		console.error('Error fetching games:', error);
 		return [];
 	}
 }
@@ -15,7 +14,6 @@ export async function fetchFeaturedGames(): Promise<Game[]> {
 	try {
 		return await gameService.getFeaturedGames();
 	} catch (error) {
-		console.error('Error fetching featured games:', error);
 		return [];
 	}
 }
@@ -24,7 +22,6 @@ export async function fetchGameById(id: number): Promise<GameById | null> {
 	try {
 		return await gameService.getGameById(id);
 	} catch (error) {
-		console.error(`Error fetching game ${id}:`, error);
 		return null;
 	}
 }
