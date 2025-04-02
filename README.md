@@ -1,23 +1,25 @@
-
 # NexusHub: In-Game Store Platform
 
-A modern, responsive game marketplace built with Next.js, featuring a carousel banner, infinite scroll for game discovery, and a responsive grid layout.
+A responsive game marketplace built with Next.js, featuring a carousel banner, infinite scroll for game discovery, and a responsive grid layout.
 
 ## Setup Instructions
 
 ### Prerequisites
+
 - Node.js 16.x or higher
 - npm or yarn
 
 ### Installation
 
 1. Clone the repository
+
    ```
    git clone https://github.com/hagonin/in-game-stores.git
    cd in-game-stores
    ```
 
 2. Install dependencies
+
    ```
    npm install
    # or
@@ -25,6 +27,7 @@ A modern, responsive game marketplace built with Next.js, featuring a carousel b
    ```
 
 3. Environment Setup
+
    - Create a `.env.local` file in the root directory
    - Add your RAWG API key:
      ```
@@ -33,6 +36,7 @@ A modern, responsive game marketplace built with Next.js, featuring a carousel b
    - Get your API key from [RAWG.io](https://rawg.io/apidocs)
 
 4. Start the development server
+
    ```
    npm run dev
    # or
@@ -43,58 +47,100 @@ A modern, responsive game marketplace built with Next.js, featuring a carousel b
 
 ## Key Features
 
-### 1. Carousel Banner
+### 1. Interactive Carousel Banner
 
-The carousel banner showcases featured games with smooth transitions and responsive design.
+A modern, touch-friendly banner that shows off featured games:
 
-**Implementation Highlights:**
-- Framer Motion animations for smooth transitions
-- Responsive images that adapt to mobile and desktop
-- Dynamic content loading from the API
+- Swipe or drag to move between games on different screens.
+- Infinte cycle carousel
+- Navigate manually with intuitive control buttons.
 
-### 2. Infinite Scroll
+### 2. Smart Grid Layout
 
-The infinite scroll implementation allows users to continuously discover games without pagination controls.
+A clean, organized way to display games on any screen size:
 
-**Implementation Highlights:**
-- Optimized API calls with debounce to prevent excessive requests
-- Elegant loading states with skeleton placeholders
-- Intelligent handling of duplicate results from the API
-- End-of-content detection and smooth UX for scrolling back to top
+- Games arrange themselves on different screens
+- Cards maintain consistent sizing
+- Hover over a game to see additional details
+- Easy to use with keyboard
+- Smooth animations when interacting with game cards
 
-### 3. Grid Layout
+### 3. Infinite Scroll
 
-The responsive game grid adapts to any screen size while maintaining visual consistency.
-
-**Implementation Highlights:**
-- CSS Grid implementation with auto-fill and minmax for fluid layouts
-- Consistent card sizing across viewports
-- Animated hover effects for enhanced user interaction
-- Accessibility considerations for keyboard navigation
+- Load new games automatically when scrolling down
+- Show loading animations
+- Prevent duplicate games from appearing in results
+- Handle error
+- Back-to-top button when scrolling far down
 
 ## Time Allocation Reflection
 
-**Project Planning (15%):**
+**Project Planning (20%):**
+
 - Reviewing designs and planning component structure
 - Researching API capabilities and limitations
-- Setting up the project architecture
+- Setting up the project architecture with AI-agent to create a skeleton structure
 
-**Core Functionality (60%):**
+**Core Functionality (65%):**
+
 - Implementing API service and data fetching logic
 - Building the responsive grid with proper spacing and alignment
 - Creating the carousel banner with animation effects
 - Developing the infinite scroll behavior with appropriate loading states
+- Adding hover animations and transitions (combining Tailwind and Framer Motion)
 
-**Polish and Refinements (25%):**
+**Polish and Refinements (15%):**
+
 - Optimizing performance with proper React patterns
-- Adding hover animations and transitions
 - Implementing error handling and fallbacks
-- Testing across devices and fixing edge cases
+- Setting up tests across devices (implementation in progress)
 
-The most challenging aspect was : 
-- Balancing API efficiency with user experience, particularly in the infinite scroll implementation. 
-- Handling potential duplicates from the API while maintaining smooth loading animations required careful state management. 
-- Adapting the grid to various screen sizes and game counts required a flexible row configuration.
+I focused on three main components:
+
+- **Carousel banner**: The first element users see, designed to feel dynamic and polished
+- **Infinite scroll**: Connection with the API to load more content when scrolling down
+- **Responsive grid view**: Essential for showcasing games and testing the infinite scroll feature
+
+## Technical Challenges & Solutions
+
+### 1. Responsive Grid Layout with Consistent Card Sizes
+
+**Challenge**: Cards of different heights and widths caused layout issues when screen sizes changed.  
+**Solution**: Implemented CSS Grid with auto-fill and minmax() functions, used dynamic height classes based on screen size, and applied aspect ratio techniques.
+
+### 2. Infinite Scroll with API Pagination
+
+**Challenge**: The API returned duplicate results when scrolling down.  
+**Solution**: Used Intersection Observer API (instead of scroll events), added skeleton loading states, and filtered out duplicates from results.
+
+### 3. Touch Device Compatibility
+
+**Challenge**: Hover effects didn't work properly on touch devices.  
+**Solution**: Used Framer Motion's `MotionConfig` and `drag` props combined with Tailwind's responsive classes (`md:`, `lg:`) for responsive hover animations.
+
+Due to time constraints, I focused on implementing the core functionality of the carousel banner, grid view, and infinite scroll, while prioritizing a clean and modular codebase. The optional "Store Administration Interface Concept" was not implemented in this submission.
+
+## Future Enhancements
+
+With additional time, I would implement:
+
+### 1. Admin Interface
+
+- Drag-and-drop product manager
+- Scheduling system for promotional events
+- Preview mode before publishing
+
+### 2. User Experience Improvements
+
+- Filtering and sorting capabilities
+- Search with auto-suggestions
+- Enhanced mobile-friendly touch controls
+
+### 3. Performance Optimizations
+
+- Better image optimization techniques
+- Virtualized lists for extremely large catalogs
+- Client-side caching to reduce redundant API calls
 
 ## Technologies Used
 

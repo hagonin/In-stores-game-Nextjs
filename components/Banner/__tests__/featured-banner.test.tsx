@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { act } from 'react-dom/test-utils';
-import FeaturedBanner from '../featured-banner';
+import FeaturedBanner from '..';
 import { useFeaturedBanners } from '@/hooks/use-featured-banners';
 import { useImageLoading } from '@/hooks/use-image-loading';
 import { useMediaQuery } from '@/hooks/use-media-query';

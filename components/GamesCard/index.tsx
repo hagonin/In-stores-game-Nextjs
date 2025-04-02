@@ -1,12 +1,12 @@
-import GameGrid from '@/components/Games/game-grid';
-import { GameGridSkeleton } from '@/components/Games/game-grid-skeleton';
+import GameGrid from '@/components/GamesCard/game-grid';
+import { GameGridSkeleton } from '@/components/GamesCard/game-grid-skeleton';
 import { LoadingIndicator } from '@/components/UI/loading-indicator';
 import { ScrollInfinite } from '@/components/scroll-infinite';
 import { EndOfContent } from '@/components/end-of-content-game';
 import { FilterBar } from '@/components/filter-bar';
 import { LoadingGames } from '@/components/loading-games';
 import { useGames } from '@/hooks/use-games';
-import { ErrorMessage } from './UI/error-message';
+import { ErrorMessage } from '../UI/error-message';
 import { Game } from '@/lib/types';
 import { useEffect } from 'react';
 
@@ -14,7 +14,7 @@ interface GameSectionProps {
 	onScrollToTop: () => void;
 }
 
-export function GameSection({ onScrollToTop }: GameSectionProps) {
+export function GamesCard({ onScrollToTop }: GameSectionProps) {
 	const {
 		allGames,
 		loading,

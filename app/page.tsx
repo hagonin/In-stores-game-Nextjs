@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import Header from '@/components/Header';
-import FeaturedBanner from '@/components/Banner/featured-banner';
+import Banner from '@/components/Banner';
 import { ScrollToTopButton } from '@/components/UI/scroll-to-top-button';
-import { GameSection } from '@/components/game-section';
 import { scrollToTop } from '@/lib/utils';
+import { GamesCard } from '@/components/GamesCard';
 
 export default function GameStore() {
 	const [showBackToTop, setShowBackToTop] = useState(false);
@@ -31,10 +31,10 @@ export default function GameStore() {
 		<div>
 			<Header />
 
-			<FeaturedBanner />
+			<Banner />
 
 			<main className="max-w-7xl mx-auto px-4 py-6">
-				<GameSection onScrollToTop={scrollToTop} />
+				<GamesCard onScrollToTop={scrollToTop} />
 			</main>
 
 			{/* Animated Back to Top Button */}

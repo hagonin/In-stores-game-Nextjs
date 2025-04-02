@@ -32,7 +32,7 @@ interface EnhancedBanner {
 	uniqueKey: string;
 }
 
-export default function FeaturedBanner() {
+export default function Banner() {
 	const router = useRouter();
 	const { banners, isLoading, shouldShowLoading } = useFeaturedBanners();
 	const { isImageError, handleImageLoad, handleImageError } = useImageLoading();
