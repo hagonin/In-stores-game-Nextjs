@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 
 interface BannerContentProps {
 	title: string;
-	isImageLoaded: boolean;
 	genres?: string;
 	isHovered?: boolean;
 }
@@ -12,7 +11,6 @@ interface BannerContentProps {
 export default function BannerContent({
 	title,
 	genres,
-	isImageLoaded,
 	isHovered = false,
 }: BannerContentProps) {
 	// Initialize all hooks unconditionally at the top level
@@ -26,11 +24,6 @@ export default function BannerContent({
 	useEffect(() => {
 		setIsDesktop(isDesktopQuery);
 	}, [isDesktopQuery, isMobileQuery]);
-
-	// Don't render content if image is not loaded yet
-	if (!isImageLoaded) {
-		return null;
-	}
 
 	// Define animation variants
 	const containerVariants = {

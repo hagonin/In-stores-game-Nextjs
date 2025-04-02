@@ -1,10 +1,11 @@
 'use client';
 
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { AlertCircle } from 'lucide-react';
 import { motion, MotionConfig, PanInfo } from 'framer-motion';
+import { v4 as uuid } from 'uuid';
 
 // Custom hooks
 import { useFeaturedBanners } from '@/hooks/use-featured-banners';
@@ -16,51 +17,34 @@ import BannerNavigation from './banner-navigation';
 import BannerImage from './banner-image';
 import BannerLoading from './banner-loading';
 
+// Constants
+const SWIPE_THRESHOLD = 50;
+const RESET_TIMEOUT = 50;
+
+// Extended Banner type to include uniqueKey for React keys
+interface EnhancedBanner {
+	id: string;
+	title: string;
+	subtitle: string;
+	image: string;
+	mobileImage: string;
+	genres?: string;
+	uniqueKey: string;
+}
+
 export default function FeaturedBanner() {
 	const router = useRouter();
 	const { banners, isLoading, shouldShowLoading } = useFeaturedBanners();
-	const {
-		isImageLoaded,
-		isImageError,
-		resetImageState,
-		handleImageLoad,
-		handleImageError,
-	} = useImageLoading();
+	const { isImageError, handleImageLoad, handleImageError } = useImageLoading();
 
-	// Custom state management for infinite carousel
-	const [currentIndex, setCurrentIndex] = useState(0);
-
-	// Generate an array with duplicate slides for the infinite effect
-	const getCircularBanners = useCallback(() => {
-		if (!banners || banners.length <= 1) return banners;
-
-		// Create copies to enable infinite scrolling illusion
-		return [...banners, ...banners, ...banners];
-	}, [banners]);
-
-	const circularBanners = getCircularBanners();
-	const totalBanners = banners?.length || 0;
-
-	// Calculate the starting index for the center set of banners
-	const startingIndex = totalBanners;
-
-	// Use this to track if we're currently performing a layout transition
-	const [isLayoutAnimating, setIsLayoutAnimating] = useState(false);
-
-	// Calculate the real index (for UI display)
-	const realIndex = totalBanners
-		? (((currentIndex - startingIndex) % totalBanners) + totalBanners) %
-		  totalBanners
-		: 0;
-
-	// Client-side detection for device type
+	// Client-side detection for device type with initial values
 	const isDesktopQuery = useMediaQuery('(min-width: 1025px)');
 	const isTabletQuery = useMediaQuery(
 		'(min-width: 641px) and (max-width: 1024px)'
 	);
 	const isMobileQuery = useMediaQuery('(max-width: 640px)');
 
-	// Default to mobile-first approach
+	// Default to mobile-first approach with state
 	const [isDesktop, setIsDesktop] = useState(false);
 	const [isTablet, setIsTablet] = useState(false);
 	const [isMobile, setIsMobile] = useState(true);
@@ -72,41 +56,85 @@ export default function FeaturedBanner() {
 		setIsMobile(isMobileQuery);
 	}, [isDesktopQuery, isTabletQuery, isMobileQuery]);
 
-	// After banners load, set the current index to the middle set
-	useEffect(() => {
-		if (banners && banners.length > 0) {
-			setCurrentIndex(startingIndex);
-		}
-	}, [banners, startingIndex]);
-
-	// Initialize the index if it changes drastically
-	useEffect(() => {
-		// If we've scrolled too far in either direction, reset to middle seamlessly
-		if (currentIndex < totalBanners / 2) {
-			setIsLayoutAnimating(true);
-			setTimeout(() => {
-				setCurrentIndex(startingIndex + (currentIndex % totalBanners));
-				setIsLayoutAnimating(false);
-			}, 50);
-		} else if (
-			currentIndex >=
-			startingIndex + totalBanners + totalBanners / 2
-		) {
-			setIsLayoutAnimating(true);
-			setTimeout(() => {
-				setCurrentIndex(startingIndex + (currentIndex % totalBanners));
-				setIsLayoutAnimating(false);
-			}, 50);
-		}
-	}, [currentIndex, startingIndex, totalBanners]);
-
-	// Add state for hover effect - only for desktop
-	const [isHovered, setIsHovered] = useState(false);
+	// Carousel state
 	const [isDragging, setIsDragging] = useState(false);
-
-	// Refs for the carousel
+	const [isHovered, setIsHovered] = useState(false);
+	const [currentVirtualIndex, setCurrentVirtualIndex] = useState(0);
 	const bannerRef = useRef<HTMLDivElement>(null);
 	const constraintsRef = useRef<HTMLDivElement>(null);
+
+	const totalRealBanners = banners?.length || 0;
+	const hasMultipleBanners = totalRealBanners > 1;
+
+	// Create circular banners with unique keys
+	const circularBanners = useMemo<EnhancedBanner[]>(() => {
+		if (!hasMultipleBanners)
+			return (banners ?? []).map((banner) => ({
+				...banner,
+				uniqueKey: `${banner.id}-${uuid()}`,
+			}));
+
+		// Create duplicates for infinite scrolling with unique keys
+		return [...banners, ...banners, ...banners].map((banner) => ({
+			...banner,
+			uniqueKey: `${banner.id}-${uuid()}`,
+		}));
+	}, [banners, hasMultipleBanners]);
+
+	// Calculate real index (accounting for the circular array)
+	const realIndex = useMemo(() => {
+		if (!hasMultipleBanners) return 0;
+
+		// We need to map the current virtual index back to a real banner index
+		// Add totalRealBanners and use modulo to ensure positive result
+		return (
+			((currentVirtualIndex % totalRealBanners) + totalRealBanners) %
+			totalRealBanners
+		);
+	}, [currentVirtualIndex, totalRealBanners, hasMultipleBanners]);
+
+	// Center set starting index
+	const centerStartIndex = totalRealBanners;
+
+	// Initialize to center set of banners
+	useEffect(() => {
+		if (banners && banners.length > 0) {
+			setCurrentVirtualIndex(centerStartIndex);
+		}
+	}, [banners, centerStartIndex]);
+
+	// Reset position when scrolling too far in either direction
+	useEffect(() => {
+		if (!hasMultipleBanners) return;
+
+		if (currentVirtualIndex < totalRealBanners / 2) {
+			const timer = setTimeout(() => {
+				// Reset to middle set
+				setCurrentVirtualIndex(
+					centerStartIndex + (currentVirtualIndex % totalRealBanners)
+				);
+			}, RESET_TIMEOUT);
+			return () => clearTimeout(timer);
+		}
+
+		if (
+			currentVirtualIndex >=
+			centerStartIndex + totalRealBanners + totalRealBanners / 2
+		) {
+			const timer = setTimeout(() => {
+				// Reset to middle set
+				setCurrentVirtualIndex(
+					centerStartIndex + (currentVirtualIndex % totalRealBanners)
+				);
+			}, RESET_TIMEOUT);
+			return () => clearTimeout(timer);
+		}
+	}, [
+		currentVirtualIndex,
+		centerStartIndex,
+		totalRealBanners,
+		hasMultipleBanners,
+	]);
 
 	// Define banner height class based on screen size
 	const getBannerHeight = () => {
@@ -115,32 +143,33 @@ export default function FeaturedBanner() {
 		return 'h-[500px]';
 	};
 
-	const handleNavigate = (direction: 'next' | 'prev') => {
-		resetImageState();
+	const bannerHeightClass = getBannerHeight();
 
+	// Navigation handlers
+	const handleNavigate = (direction: 'next' | 'prev') => {
 		if (direction === 'next') {
-			setCurrentIndex((prevIndex) => prevIndex + 1);
+			setCurrentVirtualIndex((prev) => prev + 1);
 		} else {
-			setCurrentIndex((prevIndex) => prevIndex - 1);
+			setCurrentVirtualIndex((prev) => prev - 1);
 		}
 	};
 
 	const handleGoToBanner = (index: number) => {
-		resetImageState();
 		// Convert dot index to the circular index
-		setCurrentIndex(startingIndex + index);
+		setCurrentVirtualIndex(centerStartIndex + index);
 	};
 
+	// Handle click on banner
 	const handleClickBanner = () => {
 		// Don't navigate if dragging
 		if (isDragging) return;
 
-		const banner = banners[realIndex];
-		if (banner?.id) {
+		const gameId = banners[realIndex]?.id;
+		if (gameId) {
 			try {
-				router.push(`/games/${banner.id}`);
+				router.push(`/games/${gameId}`);
 			} catch (error) {
-				console.error(`Failed to navigate to game: ${banner.id}`, error);
+				console.error(`Failed to navigate to game: ${gameId}`, error);
 				router.push('/404');
 			}
 		}
@@ -159,7 +188,7 @@ export default function FeaturedBanner() {
 		}
 	};
 
-	// Handle drag events
+	// Drag handlers
 	const handleDragStart = () => {
 		setIsDragging(true);
 	};
@@ -171,18 +200,15 @@ export default function FeaturedBanner() {
 		setIsDragging(false);
 
 		const draggedDistance = info.offset.x;
-		const swipeThreshold = 50;
 
-		if (draggedDistance > swipeThreshold) {
+		if (draggedDistance > SWIPE_THRESHOLD) {
 			// Swiped right - go to previous
-			setCurrentIndex((prevIndex) => prevIndex - 1);
-		} else if (draggedDistance < -swipeThreshold) {
+			setCurrentVirtualIndex((prev) => prev - 1);
+		} else if (draggedDistance < -SWIPE_THRESHOLD) {
 			// Swiped left - go to next
-			setCurrentIndex((prevIndex) => prevIndex + 1);
+			setCurrentVirtualIndex((prev) => prev + 1);
 		}
 	};
-
-	const bannerHeightClass = getBannerHeight();
 
 	if (isLoading) {
 		return (
@@ -225,14 +251,14 @@ export default function FeaturedBanner() {
 						{/* Draggable container */}
 						<motion.div
 							style={{
-								width: `${circularBanners.length * 100}%`, // Width based on total number of slides
+								width: `${circularBanners.length * 100}%`, // Width based on total slides count
 								height: '100%',
 							}}
 							animate={{
-								x: `-${currentIndex * (100 / circularBanners.length)}%`, // Position based on current index
+								x: `-${currentVirtualIndex * (100 / circularBanners.length)}%`, // Position based on index
 							}}
 							transition={{
-								duration: isLayoutAnimating ? 0 : 0.5,
+								duration: 0.5,
 								ease: [0.32, 0.72, 0, 1],
 							}}
 							drag="x"
@@ -245,7 +271,7 @@ export default function FeaturedBanner() {
 							{/* Map through banners including duplicates for infinite effect */}
 							{circularBanners.map((banner, index) => (
 								<div
-									key={`${banner.id}-${index}`}
+									key={banner.uniqueKey}
 									className="relative h-full"
 									style={{ width: `${100 / circularBanners.length}%` }}
 									onClick={handleClickBanner}
@@ -254,28 +280,34 @@ export default function FeaturedBanner() {
 										src={banner.image}
 										mobileSrc={banner.mobileImage}
 										alt={banner.title}
-										isFirstBanner={index === startingIndex} // First banner in the middle set
+										isFirstBanner={index === centerStartIndex} // First banner in the middle set
 										isImageLoaded={true} // Always render for smooth dragging
-										isImageError={isImageError && index === currentIndex}
-										onLoad={index === currentIndex ? handleImageLoad : () => {}}
+										isImageError={isImageError && index === currentVirtualIndex}
+										onLoad={
+											index === currentVirtualIndex ? handleImageLoad : () => {}
+										}
 										onError={
-											index === currentIndex ? handleImageError : () => {}
+											index === currentVirtualIndex
+												? handleImageError
+												: () => {}
 										}
 										onClick={handleClickBanner}
 									/>
 
+									{/* Content container - always render but control visibility with opacity */}
 									<div className="absolute inset-0 flex flex-col justify-end">
-										<div className="banner-content">
-											{index === currentIndex && (
-												<BannerContent
-													title={banner.title}
-													genres={banner.genres}
-													isImageLoaded={
-														isImageLoaded || index !== currentIndex
-													}
-													isHovered={isHovered || !isDesktop}
-												/>
-											)}
+										<div
+											className={`banner-content transition-opacity duration-300 ${
+												index === currentVirtualIndex
+													? 'opacity-100'
+													: 'opacity-0'
+											}`}
+										>
+											<BannerContent
+												title={banner.title}
+												genres={banner.genres}
+												isHovered={isHovered || !isDesktop}
+											/>
 										</div>
 									</div>
 								</div>
@@ -283,9 +315,9 @@ export default function FeaturedBanner() {
 						</motion.div>
 					</div>
 
-					{/* Navigation buttons and dots - use real index for navigation display */}
+					{/* Navigation buttons and dots - use real index for navigation */}
 					<BannerNavigation
-						totalBanners={totalBanners}
+						totalBanners={totalRealBanners}
 						currentBanner={realIndex}
 						onNext={() => handleNavigate('next')}
 						onPrev={() => handleNavigate('prev')}

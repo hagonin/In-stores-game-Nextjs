@@ -44,6 +44,7 @@ export default function BannerNavigation({
 			{/* Navigation buttons with animation */}
 			<AnimatePresence initial={false}>
 				<motion.button
+					key="prev-button"
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 0.7 }}
 					exit={{ opacity: 0 }}
@@ -68,6 +69,7 @@ export default function BannerNavigation({
 				</motion.button>
 
 				<motion.button
+					key="next-button"
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 0.7 }}
 					exit={{ opacity: 0 }}
