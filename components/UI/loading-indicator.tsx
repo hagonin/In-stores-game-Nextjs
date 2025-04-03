@@ -39,7 +39,7 @@ export function LoadingIndicator({
 			y: [0, -20, 0],
 			backgroundColor: [
 				color,
-				i === 0 ? color : i === 1 ? '#2563eb' : color,
+				i === 0 ? color : i === 1 ? '#2A2C2D' : '#404040',
 				color,
 			],
 			transition: {
