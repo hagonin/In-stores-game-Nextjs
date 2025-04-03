@@ -150,6 +150,29 @@ With additional time, I would implement:
 - **Axios**: HTTP client for API requests
 - **RAWG API**: Game data source
 
+## Testing
+
+The project includes comprehensive test coverage for key features:
+
+### Running Tests
+
+```bash
+# Run tests once
+npx test
+
+# Run tests in watch mode (development)
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+```
+
+### Test Coverage
+
+- **Infinite Scroll**: Tests for proper loading, intersection detection, and data handling
+- **Scroll-to-Top Button**: Tests for visibility, click handling, and scrolling behavior
+- **Integration Tests**: Tests for component interactions and state management
+
 ## License
 
 MIT

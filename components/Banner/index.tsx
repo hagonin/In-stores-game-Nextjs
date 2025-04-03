@@ -139,8 +139,8 @@ export default function Banner() {
 	// Define banner height class based on screen size
 	const getBannerHeight = () => {
 		if (isMobile) return 'h-[350px]';
-		if (isTablet) return 'h-[400px]';
-		return 'h-[500px]';
+		if (isTablet) return 'h-[450px]';
+		return 'h-[550px]';
 	};
 
 	const bannerHeightClass = getBannerHeight();

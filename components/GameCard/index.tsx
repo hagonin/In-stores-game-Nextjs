@@ -90,7 +90,7 @@ export default function GameCard({ game, size = 'normal' }: GameCardProps) {
 					{/* Rating badge - Always visible on all devices */}
 					{game.rating && (
 						<motion.div
-							className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 md:top-3 md:right-3 bg-amber-500 text-white text-[10px] sm:text-[11px] md:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded shadow-md z-20"
+							className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 md:top-3 md:right-3 bg-amber-500 text-white text-[10px] sm:text-[11px] md:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-2xl shadow-md z-20"
 							initial={{ opacity: 0, y: -10 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ duration: 0.3 }}

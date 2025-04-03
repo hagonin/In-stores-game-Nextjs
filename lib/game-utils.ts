@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { gameService } from './api-service';
 import { Game, GameById } from './types';
 import type { Variants } from 'framer-motion';
