@@ -84,10 +84,10 @@ export default function BannerContent({
 
 					<motion.button
 						variants={itemVariants}
-						className="bg-amber-300/90 text-black font-medium py-2 px-4 rounded-2xl self-start text-sm md:text-base transition-colors duration-300 hover:bg-white/90"
+						className="bg-amber-300/90 text-black font-medium py-2 px-5 rounded-3xl self-start text-sm md:text-base transition-colors duration-300 hover:bg-white/90"
 						onClick={onClick}
 					>
-						View Details →
+						Play Now →
 					</motion.button>
 				</motion.div>
 			</div>
@@ -109,10 +109,10 @@ export default function BannerContent({
 					</h2>
 
 					<button
-						className="bg-amber-300/90 text-black font-medium py-1.5 px-3 rounded-2xl self-start text-xs sm:text-sm transition-colors duration-300 hover:bg-white/90"
+						className="bg-amber-300/90 text-black font-medium py-1.5 px-4 rounded-2xl self-start text-xs sm:text-sm transition-colors duration-300 hover:bg-white/90"
 						onClick={onClick}
 					>
-						View Details →
+						Play Now →
 					</button>
 				</div>
 			</div>
