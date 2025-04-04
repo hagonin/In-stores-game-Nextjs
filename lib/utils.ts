@@ -37,25 +37,3 @@ export const getCardHeightClass = (size: 'normal' | 'large' | 'small') => {
 			return 'h-[250px] sm:h-[275px] md:h-[231px]';
 	}
 };
-
-// function to get size configuration
-// export const getCardHeightClass = (size: 'small' | 'large' | 'normal') => {
-// 	switch (size) {
-// 		case 'small':
-// 			return {
-// 				aspectRatio: 'aspect-[305/225]',
-// 				maxWidth: 'max-w-[305px]',
-// 			};
-// 		case 'large':
-// 			return {
-// 				aspectRatio: 'aspect-[631/349]',
-// 				maxWidth: 'max-w-[631px]',
-// 			};
-// 		case 'normal':
-// 		default:
-// 			return {
-// 				aspectRatio: 'aspect-[410/281]',
-// 				maxWidth: 'max-w-[410px]',
-// 			};
-// 	}
-// };

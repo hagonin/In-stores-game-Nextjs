@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { ResponsiveImage } from '@/components/UI/responsive-image';
 
@@ -11,7 +11,6 @@ interface BannerImageProps {
 	isImageError: boolean;
 	onLoad: () => void;
 	onError: () => void;
-	onClick: () => void;
 }
 
 export default function BannerImage({
@@ -23,19 +22,32 @@ export default function BannerImage({
 	isImageError,
 	onLoad,
 	onError,
-	onClick,
 }: BannerImageProps) {
-	const isMobile = useMediaQuery('(max-width: 767px)');
+	const isMobileQuery = useMediaQuery('(max-width: 767px)');
+	const [isMobile, setIsMobile] = useState(false);
 	const [imageSrc, setImageSrc] = useState(src);
+	const prevSrcRef = useRef(src);
+	const prevMobileSrcRef = useRef(mobileSrc);
 
-	// Use mobile image on smaller screens if available
+	// Update responsive state safely to prevent infinite loops
 	useEffect(() => {
-		if (isMobile && mobileSrc) {
-			setImageSrc(mobileSrc);
-		} else {
-			setImageSrc(src);
+		setIsMobile(isMobileQuery);
+	}, [isMobileQuery]);
+
+	// Only update image source when necessary
+	useEffect(() => {
+		// Check if sources have changed
+		if (src !== prevSrcRef.current || mobileSrc !== prevMobileSrcRef.current) {
+			prevSrcRef.current = src;
+			if (mobileSrc) prevMobileSrcRef.current = mobileSrc;
 		}
-	}, [isMobile, mobileSrc, src]);
+
+		// Set the correct image source based on screen size
+		const newSrc = isMobile && mobileSrc ? mobileSrc : src;
+		if (newSrc !== imageSrc) {
+			setImageSrc(newSrc);
+		}
+	}, [isMobile, mobileSrc, src, imageSrc]);
 
 	if (isImageError) {
 		return (
@@ -46,7 +58,10 @@ export default function BannerImage({
 	}
 
 	return (
-		<div className="relative w-full h-full" onClick={onClick}>
+		<div className="relative w-full h-full">
+			{/* Gradient overlay for better content visibility */}
+			<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10 pointer-events-none"></div>
+
 			<ResponsiveImage
 				src={imageSrc}
 				alt={alt}
@@ -56,7 +71,6 @@ export default function BannerImage({
 					isImageLoaded ? 'opacity-100' : 'opacity-0'
 				}`}
 				sizes="100vw"
-				onClick={onClick}
 				onLoad={onLoad}
 				onError={onError}
 			/>

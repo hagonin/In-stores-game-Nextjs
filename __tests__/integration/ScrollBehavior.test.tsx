@@ -2,7 +2,21 @@ import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { ScrollToTopButton } from '@/components/UI/scroll-to-top-button';
 
-// Mock window scrollTo function
+// Mock framer-motion
+jest.mock('framer-motion', () => {
+	return {
+		motion: {
+			div: ({ children, ...props }) => (
+				<div data-testid="motion-div" {...props}>
+					{children}
+				</div>
+			),
+		},
+		AnimatePresence: ({ children }) => <>{children}</>,
+	};
+});
+
+// Mock window.scrollTo
 const originalScrollTo = window.scrollTo;
 
 describe('Scroll Behavior Integration Tests', () => {
@@ -30,15 +44,18 @@ describe('Scroll Behavior Integration Tests', () => {
 		Object.defineProperty(window, 'pageYOffset', { value: 1000 });
 
 		// Create a simple scroll to top function to test
-		const scrollToTop = () => {
+		const scrollToTop = jest.fn(() => {
 			window.scrollTo({ top: 0, behavior: 'smooth' });
-		};
+		});
 
 		render(<ScrollToTopButton onClick={scrollToTop} />);
 
 		// Simulate clicking the button
 		const button = screen.getByRole('button', { name: /back to top/i });
 		fireEvent.click(button);
+
+		// Verify scrollToTop was called
+		expect(scrollToTop).toHaveBeenCalledTimes(1);
 
 		// Verify scrollTo was called with correct parameters
 		expect(window.scrollTo).toHaveBeenCalledWith({
@@ -47,7 +64,7 @@ describe('Scroll Behavior Integration Tests', () => {
 		});
 	});
 
-	test('integration with a custom scroll handler', () => {
+	test('integration with a custom scroll handler', async () => {
 		// Set up a more complex scroll handler with state
 		const TestComponent = () => {
 			const [isVisible, setIsVisible] = React.useState(false);
@@ -60,57 +77,67 @@ describe('Scroll Behavior Integration Tests', () => {
 				};
 
 				window.addEventListener('scroll', handleScroll);
+				// Trigger initial check
+				handleScroll();
+
 				return () => window.removeEventListener('scroll', handleScroll);
 			}, []);
 
-			const handleScrollToTop = () => {
+			const handleScrollToTop = jest.fn(() => {
 				window.scrollTo({ top: 0, behavior: 'smooth' });
 				setIsVisible(false);
-			};
+			});
 
 			return isVisible ? (
 				<ScrollToTopButton onClick={handleScrollToTop} />
 			) : null;
 		};
 
+		// Initial render - button should be hidden since pageYOffset is 0
 		const { rerender } = render(<TestComponent />);
 
-		// Initially, button should not be visible (not in document)
+		// Initially, button should not be visible
 		expect(
 			screen.queryByRole('button', { name: /back to top/i })
 		).not.toBeInTheDocument();
 
 		// Simulate scrolling down
-		act(() => {
+		await act(async () => {
 			Object.defineProperty(window, 'pageYOffset', { value: 500 });
 			// Trigger scroll event
 			window.dispatchEvent(new Event('scroll'));
+			// Allow state to update
+			await new Promise((resolve) => setTimeout(resolve, 0));
 		});
 
+		// Force a re-render after the state update
 		rerender(<TestComponent />);
 
 		// Now button should be visible
 		const button = screen.getByRole('button', { name: /back to top/i });
 		expect(button).toBeInTheDocument();
 
-		// Click the button to scroll to top
+		// Click the button
 		fireEvent.click(button);
 
-		// Verify scroll behavior
+		// Verify window.scrollTo was called
 		expect(window.scrollTo).toHaveBeenCalledWith({
 			top: 0,
 			behavior: 'smooth',
 		});
 
-		// Simulate that we've scrolled to top
-		act(() => {
+		// Simulate we've scrolled to the top
+		await act(async () => {
 			Object.defineProperty(window, 'pageYOffset', { value: 0 });
 			window.dispatchEvent(new Event('scroll'));
+			// Allow state to update
+			await new Promise((resolve) => setTimeout(resolve, 0));
 		});
 
+		// Force re-render
 		rerender(<TestComponent />);
 
-		// Button should disappear again
+		// Button should disappear
 		expect(
 			screen.queryByRole('button', { name: /back to top/i })
 		).not.toBeInTheDocument();

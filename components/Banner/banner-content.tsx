@@ -5,17 +5,16 @@ import { useEffect, useState } from 'react';
 interface BannerContentProps {
 	title: string;
 	genres?: string;
-	isHovered?: boolean;
+	onClick: () => void;
 }
 
 export default function BannerContent({
 	title,
 	genres,
-	isHovered = false,
+	onClick,
 }: BannerContentProps) {
 	// Initialize all hooks unconditionally at the top level
 	const isDesktopQuery = useMediaQuery('(min-width: 1024px)');
-	const isMobileQuery = useMediaQuery('(max-width: 640px)');
 
 	// States for responsive behavior
 	const [isDesktop, setIsDesktop] = useState(false);
@@ -23,35 +22,46 @@ export default function BannerContent({
 	// Update states after hydration
 	useEffect(() => {
 		setIsDesktop(isDesktopQuery);
-	}, [isDesktopQuery, isMobileQuery]);
+	}, [isDesktopQuery]);
 
-	// Define animation variants
+	// Define animation variants - only visible state
 	const containerVariants = {
-		hidden: { opacity: 0, y: 20 },
 		visible: {
 			opacity: 1,
 			y: 0,
-			transition: { staggerChildren: 0.1, delayChildren: 0.1 },
+			transition: {
+				duration: 0.5,
+				staggerChildren: 0.1,
+				ease: [0.25, 0.1, 0.25, 1.0],
+			},
 		},
 	};
 
 	const itemVariants = {
-		hidden: { opacity: 0, y: 10 },
-		visible: { opacity: 1, y: 0 },
+		visible: {
+			opacity: 1,
+			y: 0,
+			transition: { duration: 0.3 },
+		},
 	};
 
 	return (
 		<div
 			className={`
 				p-4 sm:p-5 md:p-6
-				${!isDesktop ? 'bg-gradient-to-t from-black via-black/70 to-transparent' : ''}
+				${
+					!isDesktop
+						? 'bg-gradient-to-t from-black/90 via-black/70 to-transparent'
+						: 'bg-gradient-to-t from-black/80 via-black/40 to-transparent'
+				}
+				w-full
 			`}
 		>
 			{/* Desktop version */}
 			<div className={isDesktop ? 'block' : 'hidden'}>
 				<motion.div
-					initial="hidden"
-					animate={isHovered ? 'visible' : 'hidden'}
+					initial={{ opacity: 0, y: 10 }}
+					animate="visible"
 					variants={containerVariants}
 					className="flex flex-col"
 				>
@@ -67,24 +77,43 @@ export default function BannerContent({
 					<motion.h2
 						variants={itemVariants}
 						className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 text-white cursor-pointer"
+						onClick={onClick}
 					>
 						{title}
 					</motion.h2>
+
+					<motion.button
+						variants={itemVariants}
+						className="bg-amber-300/90 text-black font-medium py-2 px-4 rounded-2xl self-start text-sm md:text-base transition-colors duration-300 hover:bg-white/90"
+						onClick={onClick}
+					>
+						View Details →
+					</motion.button>
 				</motion.div>
 			</div>
 
-			{/* Mobile/Tablet version - always visible with no animation */}
+			{/* Mobile/Tablet version */}
 			<div className={!isDesktop ? 'block' : 'hidden'}>
-				<div className="flex flex-col max-w-[85%] sm:max-w-[75%] md:max-w-[65%]">
+				<div className="flex flex-col max-w-[85%] sm:max-w-[75%] md:max-w-[65%] transition-all duration-500 ease-in-out">
 					{genres && (
 						<div className="inline-block bg-blue-500/90 backdrop-blur-sm py-1 px-3 rounded-2xl text-white text-xs font-medium tracking-wide mb-2 self-start">
 							{genres}
 						</div>
 					)}
 
-					<h2 className="text-lg sm:text-xl font-bold mb-2 text-white cursor-pointer line-clamp-2">
+					<h2
+						className="text-lg sm:text-xl font-bold mb-2 text-white cursor-pointer line-clamp-2"
+						onClick={onClick}
+					>
 						{title}
 					</h2>
+
+					<button
+						className="bg-amber-300/90 text-black font-medium py-1.5 px-3 rounded-2xl self-start text-xs sm:text-sm transition-colors duration-300 hover:bg-white/90"
+						onClick={onClick}
+					>
+						View Details →
+					</button>
 				</div>
 			</div>
 		</div>

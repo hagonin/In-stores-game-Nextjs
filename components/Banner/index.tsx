@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect, useMemo } from 'react';
+import { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { AlertCircle } from 'lucide-react';
@@ -38,27 +38,35 @@ export default function Banner() {
 	const { isImageError, handleImageLoad, handleImageError } = useImageLoading();
 
 	// Client-side detection for device type with initial values
-	const isDesktopQuery = useMediaQuery('(min-width: 1025px)');
 	const isTabletQuery = useMediaQuery(
 		'(min-width: 641px) and (max-width: 1024px)'
 	);
 	const isMobileQuery = useMediaQuery('(max-width: 640px)');
 
 	// Default to mobile-first approach with state
-	const [isDesktop, setIsDesktop] = useState(false);
 	const [isTablet, setIsTablet] = useState(false);
 	const [isMobile, setIsMobile] = useState(true);
+	const didSetDevice = useRef(false);
 
-	// Update states after hydration
+	// Update states after hydration - prevent infinite loops
 	useEffect(() => {
-		setIsDesktop(isDesktopQuery);
-		setIsTablet(isTabletQuery);
-		setIsMobile(isMobileQuery);
-	}, [isDesktopQuery, isTabletQuery, isMobileQuery]);
+		if (!didSetDevice.current) {
+			setIsTablet(isTabletQuery);
+			setIsMobile(isMobileQuery);
+			didSetDevice.current = true;
+		} else {
+			// Only update when values actually change
+			if (isTablet !== isTabletQuery) {
+				setIsTablet(isTabletQuery);
+			}
+			if (isMobile !== isMobileQuery) {
+				setIsMobile(isMobileQuery);
+			}
+		}
+	}, [isTabletQuery, isMobileQuery, isTablet, isMobile]);
 
 	// Carousel state
 	const [isDragging, setIsDragging] = useState(false);
-	const [isHovered, setIsHovered] = useState(false);
 	const [currentVirtualIndex, setCurrentVirtualIndex] = useState(0);
 	const bannerRef = useRef<HTMLDivElement>(null);
 	const constraintsRef = useRef<HTMLDivElement>(null);
@@ -107,28 +115,30 @@ export default function Banner() {
 	useEffect(() => {
 		if (!hasMultipleBanners) return;
 
+		let timerId: NodeJS.Timeout | null = null;
+
 		if (currentVirtualIndex < totalRealBanners / 2) {
-			const timer = setTimeout(() => {
+			timerId = setTimeout(() => {
 				// Reset to middle set
 				setCurrentVirtualIndex(
 					centerStartIndex + (currentVirtualIndex % totalRealBanners)
 				);
 			}, RESET_TIMEOUT);
-			return () => clearTimeout(timer);
-		}
-
-		if (
+		} else if (
 			currentVirtualIndex >=
 			centerStartIndex + totalRealBanners + totalRealBanners / 2
 		) {
-			const timer = setTimeout(() => {
+			timerId = setTimeout(() => {
 				// Reset to middle set
 				setCurrentVirtualIndex(
 					centerStartIndex + (currentVirtualIndex % totalRealBanners)
 				);
 			}, RESET_TIMEOUT);
-			return () => clearTimeout(timer);
 		}
+
+		return () => {
+			if (timerId) clearTimeout(timerId);
+		};
 	}, [
 		currentVirtualIndex,
 		centerStartIndex,
@@ -159,34 +169,20 @@ export default function Banner() {
 		setCurrentVirtualIndex(centerStartIndex + index);
 	};
 
-	// Handle click on banner
-	const handleClickBanner = () => {
-		// Don't navigate if dragging
+	// Handle navigation to game details
+	const handleNavigateToGame = useCallback(() => {
 		if (isDragging) return;
 
 		const gameId = banners[realIndex]?.id;
 		if (gameId) {
 			try {
 				router.push(`/games/${gameId}`);
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			} catch (error) {
 				router.push('/404');
 			}
 		}
-	};
-
-	// Handle hover events (desktop only)
-	const handleMouseEnter = () => {
-		if (isDesktop) {
-			setIsHovered(true);
-		}
-	};
-
-	const handleMouseLeave = () => {
-		if (isDesktop) {
-			setIsHovered(false);
-		}
-	};
+	}, [banners, realIndex, router, isDragging]);
 
 	// Drag handlers
 	const handleDragStart = () => {
@@ -240,8 +236,6 @@ export default function Banner() {
 				<div
 					ref={bannerRef}
 					className={`w-full mx-auto relative overflow-hidden ${bannerHeightClass}`}
-					onMouseEnter={handleMouseEnter}
-					onMouseLeave={handleMouseLeave}
 				>
 					{/* Parent container with ref for drag constraints */}
 					<div
@@ -274,7 +268,6 @@ export default function Banner() {
 									key={banner.uniqueKey}
 									className="relative h-full"
 									style={{ width: `${100 / circularBanners.length}%` }}
-									onClick={handleClickBanner}
 								>
 									<BannerImage
 										src={banner.image}
@@ -291,22 +284,21 @@ export default function Banner() {
 												? handleImageError
 												: () => {}
 										}
-										onClick={handleClickBanner}
 									/>
 
-									{/* Content container - always render but control visibility with opacity */}
-									<div className="absolute inset-0 flex flex-col justify-end">
+									{/* Content container - always visible with smooth transitions */}
+									<div className="absolute inset-0 flex flex-col justify-end z-20">
 										<div
-											className={`banner-content transition-opacity duration-300 ${
+											className={`banner-content transform ${
 												index === currentVirtualIndex
-													? 'opacity-100'
-													: 'opacity-0'
-											}`}
+													? 'opacity-100 translate-y-0'
+													: 'opacity-0 translate-y-4 pointer-events-none'
+											} transition-all duration-500 ease-in-out`}
 										>
 											<BannerContent
 												title={banner.title}
 												genres={banner.genres}
-												isHovered={isHovered || !isDesktop}
+												onClick={handleNavigateToGame}
 											/>
 										</div>
 									</div>

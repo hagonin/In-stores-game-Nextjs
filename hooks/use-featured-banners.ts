@@ -37,6 +37,7 @@ export function useFeaturedBanners() {
 				}
 			} catch (error) {
 				// Silently handle error
+				console.error('Error fetching featured games:', error);
 			} finally {
 				// Only show loading UI if it took more than 1 second
 				const loadTime = Date.now() - loadStartTime;

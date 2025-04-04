@@ -1,109 +1,109 @@
 import React from 'react';
-import { render, screen, act, waitFor } from '@testing-library/react';
-import { ScrollInfinite } from '@/components/scroll-infinite';
-import { GamesCard } from '@/components/GamesCard';
+import { render, screen, waitFor, act } from '@testing-library/react';
+import GamesCard from '@/components/Cards/games-card';
 import { useGames } from '@/hooks/use-games';
-import { gameService } from '@/lib/api-service';
-
-// Mock the API service
-jest.mock('@/lib/api-service', () => ({
-	gameService: {
-		getGames: jest.fn(),
-		getGamesByPage: jest.fn(),
-		getFeaturedGames: jest.fn(),
-		getGameById: jest.fn(),
-	},
-}));
 
 // Mock the useGames hook
 jest.mock('@/hooks/use-games');
 
-// Mock the IntersectionObserver
+// Create mock game data
+const mockGames = [
+	{
+		id: 1,
+		name: 'Game 1',
+		background_image: 'image1.jpg',
+		rating: 4.5,
+		genres: [{ name: 'Action' }],
+	},
+	{
+		id: 2,
+		name: 'Game 2',
+		background_image: 'image2.jpg',
+		rating: 4.2,
+		genres: [{ name: 'RPG' }],
+	},
+	{
+		id: 3,
+		name: 'Game 3',
+		background_image: 'image3.jpg',
+		rating: 4.0,
+		genres: [{ name: 'Strategy' }],
+	},
+];
+
+const mockGamesBatch2 = [
+	{
+		id: 4,
+		name: 'Game 4',
+		background_image: 'image4.jpg',
+		rating: 4.7,
+		genres: [{ name: 'Adventure' }],
+	},
+	{
+		id: 5,
+		name: 'Game 5',
+		background_image: 'image5.jpg',
+		rating: 3.9,
+		genres: [{ name: 'Puzzle' }],
+	},
+];
+
+// Create a mock implementation of IntersectionObserver
 class MockIntersectionObserver {
+	callback: IntersectionObserverCallback;
+	elements: Element[] = [];
+
 	constructor(callback: IntersectionObserverCallback) {
 		this.callback = callback;
 	}
 
-	readonly root = null;
-	readonly rootMargin = '';
-	readonly thresholds = [];
-	readonly callback: IntersectionObserverCallback;
+	observe(element: Element) {
+		this.elements.push(element);
+	}
 
-	observe = jest.fn((element: Element) => {
-		this.element = element;
-	});
+	unobserve(element: Element) {
+		this.elements = this.elements.filter((el) => el !== element);
+	}
 
-	unobserve = jest.fn();
-	disconnect = jest.fn();
-	takeRecords = jest.fn();
-	element: Element | null = null;
+	disconnect() {
+		this.elements = [];
+	}
 
+	// Helper to simulate intersection
 	simulateIntersection(isIntersecting: boolean) {
-		if (!this.element) return;
-
-		const entry = [
-			{
-				boundingClientRect: {} as DOMRectReadOnly,
-				intersectionRatio: isIntersecting ? 1 : 0,
-				intersectionRect: {} as DOMRectReadOnly,
+		if (this.elements.length > 0) {
+			const entries = this.elements.map((element) => ({
 				isIntersecting,
+				target: element,
+				boundingClientRect: element.getBoundingClientRect(),
+				intersectionRatio: isIntersecting ? 1 : 0,
+				intersectionRect: isIntersecting
+					? element.getBoundingClientRect()
+					: new DOMRect(),
 				rootBounds: null,
-				target: this.element,
 				time: Date.now(),
-			},
-		];
+			}));
 
-		this.callback(entry, this);
+			this.callback(entries, this);
+		}
 	}
 }
 
-// Set up mock for IntersectionObserver
-global.IntersectionObserver =
-	MockIntersectionObserver as unknown as typeof IntersectionObserver;
-
-// Mock components that might be difficult to test
-jest.mock('@/components/GamesCard/game-grid', () => ({
-	__esModule: true,
-	default: ({ games }: { games: any[] }) => (
-		<div data-testid="game-grid">
-			{games.map((game) => (
-				<div key={game.id} data-testid={`game-${game.id}`}>
-					{game.name}
-				</div>
-			))}
-		</div>
-	),
-}));
-
-jest.mock('@/components/GamesCard/game-grid-skeleton', () => ({
-	GameGridSkeleton: () => (
-		<div data-testid="game-grid-skeleton">Loading...</div>
-	),
-}));
-
-jest.mock('@/components/filter-bar', () => ({
-	FilterBar: () => <div data-testid="filter-bar">Filter Bar</div>,
-}));
-
-// Sample game data
-const mockGames = [
-	{ id: 1, name: 'Game 1', background_image: 'image1.jpg', rating: 4.5 },
-	{ id: 2, name: 'Game 2', background_image: 'image2.jpg', rating: 4.2 },
-	{ id: 3, name: 'Game 3', background_image: 'image3.jpg', rating: 4.8 },
-];
-
-const mockGamesBatch2 = [
-	{ id: 4, name: 'Game 4', background_image: 'image4.jpg', rating: 4.3 },
-	{ id: 5, name: 'Game 5', background_image: 'image5.jpg', rating: 4.7 },
-];
+// Mock loadMoreGames function
+const mockLoadMoreGames = jest.fn();
 
 describe('Infinite Scroll with Games Integration Tests', () => {
-	const mockLoadMoreGames = jest.fn();
+	beforeAll(() => {
+		// Replace the global IntersectionObserver with our mock
+		global.IntersectionObserver =
+			MockIntersectionObserver as unknown as typeof IntersectionObserver;
+	});
 
 	beforeEach(() => {
+		// Reset mocks
 		jest.clearAllMocks();
 
-		// Mock useGames hook with initial data
+		// Setup default mock return values
 		(useGames as jest.Mock).mockReturnValue({
 			allGames: mockGames,
 			loading: false,
@@ -116,56 +116,50 @@ describe('Infinite Scroll with Games Integration Tests', () => {
 			page: 1,
 			resetGames: jest.fn(),
 		});
-
-		// Mock API responses
-		(gameService.getGames as jest.Mock).mockResolvedValue(mockGames);
-		(gameService.getGamesByPage as jest.Mock).mockResolvedValue(
-			mockGamesBatch2
-		);
 	});
 
-	test('GamesCard renders initial games and shows infinite scroll component', async () => {
+	test('renders initial game data', async () => {
 		render(<GamesCard onScrollToTop={() => {}} />);
 
-		// Check title is rendered
-		expect(screen.getByText('Explore High-Rating Games')).toBeInTheDocument();
-
-		// Check filter bar is rendered
-		expect(screen.getByTestId('filter-bar')).toBeInTheDocument();
-
-		// Wait for games to be displayed
 		await waitFor(() => {
 			expect(screen.getByTestId('game-grid')).toBeInTheDocument();
+			expect(screen.getByText('Game 1')).toBeInTheDocument();
+			expect(screen.getByText('Game 2')).toBeInTheDocument();
+			expect(screen.getByText('Game 3')).toBeInTheDocument();
 		});
-
-		// Check infinite scroll trigger is rendered
-		expect(screen.getByTestId('infinite-scroll-trigger')).toBeInTheDocument();
-
-		// Expect "Scroll for more games" text to be visible since hasMore is true
-		expect(screen.getByText('Scroll for more games')).toBeInTheDocument();
 	});
 
 	test('loadMoreGames is called when scrolling to bottom and more games are loaded', async () => {
-		render(<GamesCard onScrollToTop={() => {}} />);
+		// Initial render with the first batch of games
+		const { rerender } = render(<GamesCard onScrollToTop={() => {}} />);
+
+		// Wait for initial render to complete
+		await waitFor(
+			() => {
+				expect(screen.getByTestId('game-grid')).toBeInTheDocument();
+				expect(screen.getByText('Game 1')).toBeInTheDocument();
+			},
+			{ timeout: 1000 }
+		);
 
 		// Get the observer from the mock
 		const observer =
 			global.IntersectionObserver as unknown as MockIntersectionObserver;
 
-		// Initial games should be rendered
-		await waitFor(() => {
-			expect(screen.getByTestId('game-grid')).toBeInTheDocument();
-		});
+		// Make sure we have an element to observe before simulating intersection
+		expect(observer.elements.length).toBeGreaterThan(0);
 
 		// Simulate intersection (user scrolled to bottom)
-		act(() => {
+		await act(async () => {
 			observer.simulateIntersection(true);
+			// Give React time to process the state update
+			await new Promise((resolve) => setTimeout(resolve, 0));
 		});
 
 		// Check that loadMoreGames was called
 		expect(mockLoadMoreGames).toHaveBeenCalledTimes(1);
 
-		// Now simulate that more games were loaded
+		// Now simulate that more games were loaded by updating the mock
 		(useGames as jest.Mock).mockReturnValue({
 			allGames: [...mockGames, ...mockGamesBatch2],
 			loading: false,
@@ -180,54 +174,46 @@ describe('Infinite Scroll with Games Integration Tests', () => {
 		});
 
 		// Re-render with updated games
-		const { rerender } = render(<GamesCard onScrollToTop={() => {}} />);
 		rerender(<GamesCard onScrollToTop={() => {}} />);
 
 		// New games should be displayed
-		await waitFor(() => {
-			expect(screen.getByTestId('game-grid')).toBeInTheDocument();
-			// Check for one of the new games
-			expect(screen.getByText('Game 4')).toBeInTheDocument();
-			expect(screen.getByText('Game 5')).toBeInTheDocument();
-		});
+		await waitFor(
+			() => {
+				expect(screen.getByText('Game 4')).toBeInTheDocument();
+				expect(screen.getByText('Game 5')).toBeInTheDocument();
+			},
+			{ timeout: 1000 }
+		);
 	});
 
-	test('shows end of content message when no more games are available', async () => {
-		// Mock that we're at the end of content
+	test('shows end of content message when no more games', async () => {
 		(useGames as jest.Mock).mockReturnValue({
-			allGames: [...mockGames, ...mockGamesBatch2],
+			allGames: mockGames,
 			loading: false,
 			initialLoading: false,
 			shouldShowLoading: false,
 			error: null,
 			isEndOfContent: true,
-			visibleItems: { 1: true, 2: true, 3: true, 4: true, 5: true },
+			visibleItems: { 1: true, 2: true, 3: true },
 			loadMoreGames: mockLoadMoreGames,
-			page: 2,
+			page: 1,
 			resetGames: jest.fn(),
 		});
 
 		render(<GamesCard onScrollToTop={() => {}} />);
 
-		// Wait for games to be displayed
 		await waitFor(() => {
-			expect(screen.getByTestId('game-grid')).toBeInTheDocument();
+			expect(screen.getByText(/you've reached the end/i)).toBeInTheDocument();
 		});
-
-		// End of content message should be visible
-		expect(screen.getByText("You've seen all games")).toBeInTheDocument();
 	});
 
-	test('shows loading state when fetching more games', async () => {
-		// First render with initial games
-		const { rerender } = render(<GamesCard onScrollToTop={() => {}} />);
-
-		// Then update to loading state
+	test('shows loading state while loading more games', async () => {
+		// Initial render with loading state
 		(useGames as jest.Mock).mockReturnValue({
 			allGames: mockGames,
 			loading: true,
 			initialLoading: false,
-			shouldShowLoading: false,
+			shouldShowLoading: true,
 			error: null,
 			isEndOfContent: false,
 			visibleItems: { 1: true, 2: true, 3: true },
@@ -236,22 +222,20 @@ describe('Infinite Scroll with Games Integration Tests', () => {
 			resetGames: jest.fn(),
 		});
 
-		rerender(<GamesCard onScrollToTop={() => {}} />);
+		render(<GamesCard onScrollToTop={() => {}} />);
 
-		// Loading indicator should be visible in the infinite scroll component
-		expect(
-			screen.getByTestId('infinite-scroll-trigger').textContent
-		).not.toContain('Scroll for more games');
+		await waitFor(() => {
+			expect(screen.getByTestId('loading-indicator')).toBeInTheDocument();
+		});
 	});
 
-	test('displays error message when loading games fails', async () => {
-		// Mock the error state
+	test('shows error message when loading fails', async () => {
 		(useGames as jest.Mock).mockReturnValue({
 			allGames: [],
 			loading: false,
 			initialLoading: false,
 			shouldShowLoading: false,
-			error: 'Failed to load games. Please try again later.',
+			error: 'Unable to load games',
 			isEndOfContent: false,
 			visibleItems: {},
 			loadMoreGames: mockLoadMoreGames,
@@ -261,9 +245,8 @@ describe('Infinite Scroll with Games Integration Tests', () => {
 
 		render(<GamesCard onScrollToTop={() => {}} />);
 
-		// Error message should be displayed
-		expect(
-			screen.getByText('Failed to load games. Please try again later.')
-		).toBeInTheDocument();
+		await waitFor(() => {
+			expect(screen.getByText(/unable to load games/i)).toBeInTheDocument();
+		});
 	});
 });

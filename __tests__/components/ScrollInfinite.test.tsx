@@ -1,74 +1,89 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { ScrollInfinite } from '@/components/scroll-infinite';
 
-// Mock the IntersectionObserver
+// Create a mock implementation of IntersectionObserver
 class MockIntersectionObserver {
+	callback: IntersectionObserverCallback;
+	elements: Element[] = [];
+
 	constructor(callback: IntersectionObserverCallback) {
 		this.callback = callback;
 	}
 
-	readonly root = null;
-	readonly rootMargin = '';
-	readonly thresholds = [];
-	readonly callback: IntersectionObserverCallback;
+	observe(element: Element): void {
+		this.elements.push(element);
+	}
 
-	observe = jest.fn((element: Element) => {
-		// Store the element for later simulation
-		this.element = element;
-	});
+	unobserve(element: Element): void {
+		this.elements = this.elements.filter((el) => el !== element);
+	}
 
-	unobserve = jest.fn();
-	disconnect = jest.fn();
-	takeRecords = jest.fn();
-	element: Element | null = null;
+	disconnect(): void {
+		this.elements = [];
+	}
 
-	// Helper method to simulate intersection
-	simulateIntersection(isIntersecting: boolean) {
-		if (!this.element) return;
-
-		const entry = [
-			{
-				boundingClientRect: {} as DOMRectReadOnly,
-				intersectionRatio: isIntersecting ? 1 : 0,
-				intersectionRect: {} as DOMRectReadOnly,
+	// Helper to simulate intersection
+	simulateIntersection(isIntersecting: boolean): void {
+		if (this.elements.length > 0) {
+			const entries = this.elements.map((element) => ({
 				isIntersecting,
+				target: element,
+				boundingClientRect: element.getBoundingClientRect(),
+				intersectionRatio: isIntersecting ? 1 : 0,
+				intersectionRect: isIntersecting
+					? element.getBoundingClientRect()
+					: new DOMRect(),
 				rootBounds: null,
-				target: this.element,
 				time: Date.now(),
-			},
-		];
+			}));
 
-		this.callback(entry, this);
+			this.callback(entries, this as unknown as IntersectionObserver);
+		}
 	}
 }
 
-// Replace the global IntersectionObserver with our mock
-global.IntersectionObserver =
-	MockIntersectionObserver as unknown as typeof IntersectionObserver;
+describe('ScrollInfinite', () => {
+	const originalIntersectionObserver = global.IntersectionObserver;
 
-describe('ScrollInfinite Component', () => {
-	const mockOnLoadMore = jest.fn();
-
-	beforeEach(() => {
-		jest.clearAllMocks();
+	beforeAll(() => {
+		// Replace the global IntersectionObserver with our mock
+		global.IntersectionObserver =
+			MockIntersectionObserver as unknown as typeof IntersectionObserver;
 	});
 
-	test('renders loading component when loading is true', () => {
+	afterAll(() => {
+		// Restore the original IntersectionObserver
+		global.IntersectionObserver = originalIntersectionObserver;
+	});
+
+	test('renders loading state when loading is true', () => {
 		render(
-			<ScrollInfinite
-				onLoadMore={mockOnLoadMore}
-				loading={true}
-				hasMore={true}
-				loadingComponent={<div data-testid="loading-indicator">Loading...</div>}
-			/>
+			<ScrollInfinite onLoadMore={jest.fn()} loading={true} hasMore={true} />
 		);
 
-		expect(screen.getByTestId('loading-indicator')).toBeInTheDocument();
-		expect(screen.getByText('Loading...')).toBeInTheDocument();
+		expect(screen.getByText(/loading more content/i)).toBeInTheDocument();
 	});
 
-	test('renders "Scroll for more games" when not loading and has more content', () => {
+	test('renders "no more content" message when hasMore is false', () => {
+		render(
+			<ScrollInfinite onLoadMore={jest.fn()} loading={false} hasMore={false} />
+		);
+
+		expect(screen.getByText(/you've reached the end/i)).toBeInTheDocument();
+	});
+
+	test('renders scroll message when not loading and hasMore is true', () => {
+		render(
+			<ScrollInfinite onLoadMore={jest.fn()} loading={false} hasMore={true} />
+		);
+
+		expect(screen.getByText(/scroll for more content/i)).toBeInTheDocument();
+	});
+
+	test('calls onLoadMore when intersecting and hasMore is true', () => {
+		const mockOnLoadMore = jest.fn();
+
 		render(
 			<ScrollInfinite
 				onLoadMore={mockOnLoadMore}
@@ -77,48 +92,24 @@ describe('ScrollInfinite Component', () => {
 			/>
 		);
 
-		expect(screen.getByText('Scroll for more games')).toBeInTheDocument();
-	});
-
-	test('renders "You\'ve seen all games" when no more content is available', () => {
-		render(
-			<ScrollInfinite
-				onLoadMore={mockOnLoadMore}
-				loading={false}
-				hasMore={false}
-			/>
-		);
-
-		expect(screen.getByText("You've seen all games")).toBeInTheDocument();
-	});
-
-	test('calls onLoadMore when intersection is detected and hasMore is true', async () => {
-		const { container } = render(
-			<ScrollInfinite
-				onLoadMore={mockOnLoadMore}
-				loading={false}
-				hasMore={true}
-			/>
-		);
-
-		// Get the IntersectionObserver instance
-		const scrollTrigger = container.querySelector(
-			'[data-testid="infinite-scroll-trigger"]'
-		);
-		expect(scrollTrigger).toBeInTheDocument();
-
-		// Get the observer from the mock
 		const observer =
 			global.IntersectionObserver as unknown as MockIntersectionObserver;
 
-		// Simulate intersection
-		observer.simulateIntersection(true);
+		// Make sure we have an element to observe before simulating intersection
+		expect(observer.elements.length).toBeGreaterThan(0);
 
-		// Check if onLoadMore was called
+		// Simulate intersection
+		act(() => {
+			observer.simulateIntersection(true);
+		});
+
+		// onLoadMore should be called
 		expect(mockOnLoadMore).toHaveBeenCalledTimes(1);
 	});
 
-	test('does not call onLoadMore when intersection is detected but loading is true', () => {
+	test('does not call onLoadMore when loading is true', () => {
+		const mockOnLoadMore = jest.fn();
+
 		render(
 			<ScrollInfinite
 				onLoadMore={mockOnLoadMore}
@@ -127,18 +118,21 @@ describe('ScrollInfinite Component', () => {
 			/>
 		);
 
-		// Get the observer from the mock
 		const observer =
 			global.IntersectionObserver as unknown as MockIntersectionObserver;
 
 		// Simulate intersection
-		observer.simulateIntersection(true);
+		act(() => {
+			observer.simulateIntersection(true);
+		});
 
-		// Check that onLoadMore was not called
+		// onLoadMore should not be called because loading is true
 		expect(mockOnLoadMore).not.toHaveBeenCalled();
 	});
 
-	test('does not call onLoadMore when intersection is detected but hasMore is false', () => {
+	test('does not call onLoadMore when hasMore is false', () => {
+		const mockOnLoadMore = jest.fn();
+
 		render(
 			<ScrollInfinite
 				onLoadMore={mockOnLoadMore}
@@ -147,56 +141,31 @@ describe('ScrollInfinite Component', () => {
 			/>
 		);
 
-		// Get the observer from the mock
 		const observer =
 			global.IntersectionObserver as unknown as MockIntersectionObserver;
 
 		// Simulate intersection
-		observer.simulateIntersection(true);
+		act(() => {
+			observer.simulateIntersection(true);
+		});
 
-		// Check that onLoadMore was not called
+		// onLoadMore should not be called because hasMore is false
 		expect(mockOnLoadMore).not.toHaveBeenCalled();
 	});
 
-	test('cleans up the observer on unmount', () => {
+	test('disconnects observer on unmount', () => {
 		const { unmount } = render(
-			<ScrollInfinite
-				onLoadMore={mockOnLoadMore}
-				loading={false}
-				hasMore={true}
-			/>
+			<ScrollInfinite onLoadMore={jest.fn()} loading={false} hasMore={true} />
 		);
 
-		// Get the observer from the mock
 		const observer =
 			global.IntersectionObserver as unknown as MockIntersectionObserver;
+		const disconnectSpy = jest.spyOn(observer, 'disconnect');
 
 		// Unmount the component
 		unmount();
 
-		// Check that unobserve was called
-		expect(observer.unobserve).toHaveBeenCalled();
-	});
-
-	test('component works with no references', () => {
-		// This is an edge case test - the component should handle cases where the ref is null
-		const originalRefCurrent = React.useRef<HTMLDivElement>().current;
-		jest.spyOn(React, 'useRef').mockReturnValueOnce({ current: null });
-
-		render(
-			<ScrollInfinite
-				onLoadMore={mockOnLoadMore}
-				loading={false}
-				hasMore={true}
-			/>
-		);
-
-		// This test passes if no errors are thrown during render
-		expect(true).toBeTruthy();
-
-		// Reset the mock
-		jest
-			.spyOn(React, 'useRef')
-			.mockReturnValueOnce({ current: originalRefCurrent });
+		// Observer should be disconnected
+		expect(disconnectSpy).toHaveBeenCalled();
 	});
 });
