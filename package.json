@@ -12,13 +12,16 @@
 		"test:coverage": "jest --coverage"
 	},
 	"dependencies": {
+		"@clerk/nextjs": "^6.18.0",
 		"axios": "^1.8.4",
+		"classnames": "^2.5.1",
 		"clsx": "^2.1.1",
 		"framer-motion": "^12.6.2",
 		"lucide-react": "^0.485.0",
 		"next": "15.2.4",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
+		"react-hook-form": "^7.56.1",
 		"tailwind-merge": "^3.0.2",
 		"uuid": "^11.1.0"
 	},

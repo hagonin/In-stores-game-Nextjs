@@ -9,6 +9,7 @@ import { useGames } from '@/hooks/use-games';
 import { ErrorMessage } from '../UI/error-message';
 import { Game } from '@/lib/types';
 import { useEffect } from 'react';
+import { ApiErrorBoundary } from '@/components/UI/api-error-boundary';
 
 interface GameSectionProps {
 	onScrollToTop: () => void;
@@ -41,16 +42,18 @@ export function GamesCard({ onScrollToTop }: GameSectionProps) {
 			{/* Static Filter Bar */}
 			<FilterBar />
 
-			{/* Game Grid with States */}
-			<GameGridDisplay
-				error={error}
-				initialLoading={initialLoading}
-				allGames={allGames}
-				visibleItems={visibleItems}
-				loading={loading}
-				shouldShowLoading={shouldShowLoading}
-				onRetry={() => resetGames()}
-			/>
+			<ApiErrorBoundary>
+				{/* Game Grid with States */}
+				<GameGridDisplay
+					error={error}
+					initialLoading={initialLoading}
+					allGames={allGames}
+					visibleItems={visibleItems}
+					loading={loading}
+					shouldShowLoading={shouldShowLoading}
+					onRetry={() => resetGames()}
+				/>
+			</ApiErrorBoundary>
 
 			{/* Infinite Scroll Component */}
 			<ScrollInfinite

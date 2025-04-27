@@ -15,13 +15,8 @@ interface HeaderProps {
 	cartCount?: number;
 	onSearch?: (searchTerm: string) => void;
 	onCartClick?: () => void;
-	onProfileClick?: () => void;
 }
 
-export default function Header({ onProfileClick }: HeaderProps) {
-	const handleProfileClick = () => {
-		onProfileClick?.();
-	};
-
-	return <Navbar items={MENU_ITEMS} onProfileClick={handleProfileClick} />;
+export default function Header() {
+	return <Navbar items={MENU_ITEMS} />;
 }
